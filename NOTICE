@@ -1,0 +1,33 @@
+Apple Music Card Generator
+Copyright (c) 2026 darui3018823
+
+This project is licensed under the BSD 2-Clause License.
+See the License file for details.
+
+-------------------------------------------------------------------------------
+
+THIRD-PARTY NOTICES
+
+This project uses the iTunes Search API provided by Apple Inc. to retrieve
+music metadata and artwork. Use of the iTunes Search API is subject to
+Apple's Terms of Service:
+  https://developer.apple.com/terms/
+
+Apple Music, iTunes, and the "Listen on Apple Music" badge are trademarks
+of Apple Inc., registered in the U.S. and other countries. Use of these
+trademarks and badges follows Apple's guidelines:
+  https://www.apple.com/legal/intellectual-property/guidelinesfor3rdparties.html
+
+This project is not affiliated with, endorsed by, or sponsored by Apple Inc.
+
+-------------------------------------------------------------------------------
+
+This project uses the following open-source packages:
+
+  golang.org/x/image
+  License: BSD 3-Clause
+  https://pkg.go.dev/golang.org/x/image
+
+  Tailwind CSS
+  License: MIT
+  https://tailwindcss.com
