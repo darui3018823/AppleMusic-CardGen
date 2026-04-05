@@ -1,5 +1,7 @@
 # コントリビューションガイド
 
+> **English** — [English version here](../CONTRIBUTING.md)
+
 Apple Music Card Generator へのコントリビューションに興味を持っていただきありがとうございます！
 
 ## はじめる前に

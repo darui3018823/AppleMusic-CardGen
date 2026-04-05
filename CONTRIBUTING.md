@@ -1,5 +1,7 @@
 # Contributing
 
+> **日本語** — [日本語版はこちら](./japanese/CONTRIBUTING.md)
+
 Thank you for your interest in contributing to Apple Music Card Generator!
 
 ## Before You Start

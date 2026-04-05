@@ -1,5 +1,7 @@
 # Code of Conduct
 
+> **日本語** — [日本語版はこちら](./japanese/CODE_OF_CONDUCT.md)
+
 ## Our Pledge
 
 We as members, contributors, and maintainers pledge to make participation in this project a harassment-free experience for everyone, regardless of age, body size, disability, ethnicity, gender identity and expression, level of experience, nationality, personal appearance, race, religion, or sexual identity and orientation.
