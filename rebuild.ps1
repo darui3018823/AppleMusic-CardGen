@@ -123,8 +123,8 @@ else {
     }
 }
 
-Write-Step "Build checks"
-Invoke-Checked -Command "go build ./..." -Description "Compile all packages"
+Write-Step "Build application"
+Invoke-Checked -Command "go build -o `"$ServiceName`" ." -Description "Compile application binary"
 
 if (-not $SkipTests) {
     Invoke-Checked -Command "go test ./..." -Description "Run tests"
