@@ -138,3 +138,6 @@ PORT=3000 go run server.go
 
 BSD 2-Clause License — © 2026 darui3018823  
 詳細は [License](../License) を参照してください。
+
+iTunes Search API および Apple Music のブランド素材は Apple のガイドラインに従って使用しています。  
+サードパーティに関する通知は [NOTICE](./NOTICE.md) を参照してください。

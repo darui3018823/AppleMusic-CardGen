@@ -137,3 +137,6 @@ PORT=3000 go run server.go
 
 BSD 2-Clause License — © 2026 darui3018823  
 See [License](./License) for details.
+
+This project uses the iTunes Search API and Apple Music branding under Apple's guidelines.  
+See [NOTICE](./NOTICE) for third-party notices.
