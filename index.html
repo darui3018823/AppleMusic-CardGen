@@ -1,0 +1,203 @@
+<!-- 2026 Apple Music Card Generator: darui3018823 All rights reserved. -->
+<!-- All works created by darui3018823 associated with this repository are the intellectual property of darui3018823. -->
+<!-- Packages and other third-party materials used in this repository are subject to their respective licenses and copyrights. -->
+
+<!DOCTYPE html>
+<html lang="ja" class="dark">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Apple Music Card Generator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        primary: {
+                            300: '#ff8fa3',
+                            400: '#ff5470',
+                            500: '#d6003b',
+                            600: '#b30031',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <link rel="stylesheet" href="./css/styles.css">
+</head>
+
+<body
+    class="bg-gradient-to-br from-gray-100 via-gray-50 to-rose-50 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800 text-gray-800 dark:text-gray-100 transition-colors duration-300 min-h-screen">
+
+    <div class="min-h-screen p-4 md:p-6 lg:p-8">
+        <div class="max-w-5xl mx-auto space-y-6">
+
+            <!-- Header -->
+            <header
+                class="bg-white/70 dark:bg-gray-800/70 backdrop-blur-xl rounded-3xl px-6 py-4 flex justify-between items-center shadow-lg shadow-gray-200/50 dark:shadow-black/20 ring-1 ring-gray-200/50 dark:ring-gray-700/50">
+                <div class="flex items-center gap-3">
+                    <div
+                        class="w-8 h-8 rounded-xl bg-gradient-to-br from-primary-500 to-rose-500 flex items-center justify-center text-white text-sm font-bold select-none">
+                        ♪
+                    </div>
+                    <h1
+                        class="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary-500 to-rose-500">
+                        Apple Music Card Generator
+                    </h1>
+                </div>
+                <button id="pageDarkToggle"
+                    class="p-2.5 rounded-2xl bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 transition-all focus:outline-none focus:ring-2 focus:ring-primary-300">
+                    <svg id="sunIcon" class="w-5 h-5 text-amber-500 hidden" fill="none" stroke="currentColor"
+                        viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+                    </svg>
+                    <svg id="moonIcon" class="w-5 h-5 text-gray-600 dark:text-gray-300" fill="none"
+                        stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+                    </svg>
+                </button>
+            </header>
+
+            <!-- Main -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+
+                <!-- Left: Form -->
+                <div
+                    class="bg-white/70 dark:bg-gray-800/70 backdrop-blur-xl rounded-3xl p-6 shadow-lg shadow-gray-200/50 dark:shadow-black/20 ring-1 ring-gray-200/50 dark:ring-gray-700/50 space-y-4">
+                    <h2 class="text-xs font-semibold tracking-widest text-gray-500 dark:text-gray-400 uppercase">
+                        Track Info
+                    </h2>
+
+                    <div class="space-y-1.5">
+                        <label for="title"
+                            class="block text-xs font-semibold tracking-wider text-gray-500 dark:text-gray-400">
+                            曲名 <span class="text-primary-500">*</span>
+                        </label>
+                        <input type="text" id="title" autocomplete="off"
+                            placeholder="例: Never Gonna Give You Up (2022 Remaster)"
+                            class="w-full px-4 py-2.5 bg-white dark:bg-gray-900 border-0 rounded-xl focus:ring-2 focus:ring-primary-400 outline-none dark:text-white placeholder-gray-400 shadow-sm transition-all text-sm">
+                    </div>
+
+                    <div class="space-y-1.5">
+                        <label for="artist"
+                            class="block text-xs font-semibold tracking-wider text-gray-500 dark:text-gray-400">
+                            アーティスト <span class="text-primary-500">*</span>
+                        </label>
+                        <input type="text" id="artist" autocomplete="off"
+                            placeholder="例: リック・アストリー"
+                            class="w-full px-4 py-2.5 bg-white dark:bg-gray-900 border-0 rounded-xl focus:ring-2 focus:ring-primary-400 outline-none dark:text-white placeholder-gray-400 shadow-sm transition-all text-sm">
+                    </div>
+
+                    <div class="space-y-1.5">
+                        <label for="album"
+                            class="block text-xs font-semibold tracking-wider text-gray-500 dark:text-gray-400">
+                            アルバム <span class="text-primary-500">*</span>
+                        </label>
+                        <input type="text" id="album" autocomplete="off"
+                            placeholder="例: Whenever You Need Somebody (2022 Remaster)"
+                            class="w-full px-4 py-2.5 bg-white dark:bg-gray-900 border-0 rounded-xl focus:ring-2 focus:ring-primary-400 outline-none dark:text-white placeholder-gray-400 shadow-sm transition-all text-sm">
+                    </div>
+
+                    <div class="space-y-1.5">
+                        <label for="artwork"
+                            class="block text-xs font-semibold tracking-wider text-gray-500 dark:text-gray-400">
+                            アートワークURL <span class="text-primary-500">*</span>
+                        </label>
+                        <input type="url" id="artwork" autocomplete="off"
+                            placeholder="例: https://is1-ssl.mzstatic.com/image/thumb/Music122/v4/de/eb/63/deeb63c1-7bc0-9153-cfa3-fd9e4929aacf/4050538826562.jpg/600x600bb.jpg"
+                            class="w-full px-4 py-2.5 bg-white dark:bg-gray-900 border-0 rounded-xl focus:ring-2 focus:ring-primary-400 outline-none dark:text-white placeholder-gray-400 shadow-sm transition-all text-sm">
+                        <p class="text-xs text-gray-400 dark:text-gray-500">mzstatic.com のURLのみ対応</p>
+                    </div>
+
+                    <div class="space-y-1.5">
+                        <label for="link"
+                            class="block text-xs font-semibold tracking-wider text-gray-500 dark:text-gray-400">
+                            Apple Music URL
+                        </label>
+                        <input type="url" id="link" autocomplete="off"
+                            placeholder="例: https://music.apple.com/jp/album/never-gonna-give-you-up-2022-remaster/1624945511?i=1624945512"
+                            class="w-full px-4 py-2.5 bg-white dark:bg-gray-900 border-0 rounded-xl focus:ring-2 focus:ring-primary-400 outline-none dark:text-white placeholder-gray-400 shadow-sm transition-all text-sm">
+                    </div>
+
+                    <!-- Card theme toggle -->
+                    <div
+                        class="flex items-center justify-between bg-gray-50 dark:bg-gray-900/40 rounded-2xl px-4 py-3">
+                        <span class="text-xs font-semibold tracking-wider text-gray-500 dark:text-gray-400">カードテーマ</span>
+                        <div class="flex items-center gap-3">
+                            <span id="themeLabel"
+                                class="text-sm font-medium text-gray-700 dark:text-gray-300 w-10">Dark</span>
+                            <button type="button" id="cardThemeToggle"
+                                class="relative inline-flex h-6 w-11 items-center rounded-full bg-gray-600 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-primary-400"
+                                role="switch" aria-checked="false">
+                                <span id="toggleThumb"
+                                    class="inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform duration-200 translate-x-0.5"></span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right: Preview + Markdown -->
+                <div
+                    class="bg-white/70 dark:bg-gray-800/70 backdrop-blur-xl rounded-3xl p-6 shadow-lg shadow-gray-200/50 dark:shadow-black/20 ring-1 ring-gray-200/50 dark:ring-gray-700/50 space-y-5">
+                    <h2 class="text-xs font-semibold tracking-widest text-gray-500 dark:text-gray-400 uppercase">
+                        Preview
+                    </h2>
+
+                    <!-- Empty state -->
+                    <div id="emptyState"
+                        class="flex flex-col items-center justify-center py-12 text-gray-400 dark:text-gray-500">
+                        <svg class="w-10 h-10 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                                d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" />
+                        </svg>
+                        <p class="text-sm">必須フィールドをすべて入力してください</p>
+                    </div>
+
+                    <!-- Preview cards -->
+                    <div id="previewArea" class="hidden space-y-4">
+                        <div>
+                            <p class="text-xs font-medium text-gray-400 dark:text-gray-500 mb-2">Dark</p>
+                            <img id="previewDark" alt="Dark card preview"
+                                class="w-full rounded-xl shadow-md"
+                                style="max-width: 520px;">
+                        </div>
+                        <div>
+                            <p class="text-xs font-medium text-gray-400 dark:text-gray-500 mb-2">Light</p>
+                            <img id="previewLight" alt="Light card preview"
+                                class="w-full rounded-xl shadow-md"
+                                style="max-width: 520px;">
+                        </div>
+                    </div>
+
+                    <!-- Markdown output -->
+                    <div id="markdownSection" class="hidden space-y-2">
+                        <div class="flex items-center justify-between">
+                            <h3 class="text-xs font-semibold tracking-wider text-gray-500 dark:text-gray-400 uppercase">
+                                Markdown
+                            </h3>
+                            <button id="copyBtn"
+                                class="px-3 py-1.5 bg-gradient-to-r from-primary-500 to-rose-500 text-white text-xs font-semibold rounded-xl hover:opacity-90 active:scale-95 transition-all">
+                                Copy
+                            </button>
+                        </div>
+                        <div class="bg-gray-50 dark:bg-gray-900/50 rounded-2xl p-3">
+                            <code id="markdownOutput"
+                                class="text-xs text-gray-600 dark:text-gray-300 break-all font-mono leading-relaxed"></code>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <script src="./js/card.js"></script>
+</body>
+
+</html>
