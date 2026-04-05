@@ -21,12 +21,6 @@ if ($IsWindows) {
     throw "This script is intended to run on a Linux host to generate a systemd service file."
 }
 
-# If run as root, default to a non-privileged user.
-if ($ServiceUser -eq "root") {
-    $ServiceUser = "nobody"
-    Write-Warning "Running as root. The service will be configured to run as user '$ServiceUser'."
-}
-
 # The full path to the project directory (where this script is located).
 $AppDirectory = $PSScriptRoot
 
