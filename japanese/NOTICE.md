@@ -16,7 +16,8 @@ Copyright (c) 2026 darui3018823
 https://developer.apple.com/terms/
 
 Apple Music、iTunes、および「Listen on Apple Music」バッジは Apple Inc. の商標であり、米国およびその他の国々で登録されています。これらの商標およびバッジの使用は Apple のガイドラインに従っています:  
-https://www.apple.com/legal/intellectual-property/guidelinesfor3rdparties.html
+https://www.apple.com/legal/intellectual-property/guidelinesfor3rdparties.html  
+https://marketing.services.apple/apple-music-identity-guidelines（英語のみ）
 
 本プロジェクトは Apple Inc. と提携・推薦・後援関係にありません。
 
