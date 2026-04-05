@@ -4,7 +4,7 @@
 param(
     [string]$ServiceName = "applemusiccg",
     [string]$Remote = "origin",
-    [string]$Branch = "main",
+    [string]$Branch = "master",
     [string]$HealthUrl = "http://127.0.0.1:8086/",
     [int]$HealthRetries = 20,
     [int]$HealthDelaySeconds = 1,
