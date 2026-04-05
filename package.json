@@ -1,0 +1,14 @@
+{
+  "name": "apple-music-cardgen",
+  "version": "1.0.0",
+  "scripts": {
+    "build:css": "tailwindcss -i ./input.css -o ./css/tailwind.css --minify",
+    "watch:css": "tailwindcss -i ./input.css -o ./css/tailwind.css --watch"
+  },
+  "dependencies": {
+    "tailwindcss": "^4.1.18"
+  },
+  "devDependencies": {
+    "@tailwindcss/cli": "^4.1.18"
+  }
+}

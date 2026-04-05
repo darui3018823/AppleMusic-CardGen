@@ -1,0 +1,11 @@
+@import "tailwindcss";
+
+/* class-based dark mode */
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+    --color-primary-300: #ff8fa3;
+    --color-primary-400: #ff5470;
+    --color-primary-500: #d6003b;
+    --color-primary-600: #b30031;
+}
