@@ -102,7 +102,8 @@ type iTunesResult struct {
 	ArtworkUrl100     string `json:"artworkUrl100"`
 	ReleaseDate       string `json:"releaseDate"`
 	TrackCount        int    `json:"trackCount"`
-	CollectionViewUrl string `json:"collectionViewUrl"`
+	CollectionViewUrl  string `json:"collectionViewUrl"`
+	PrimaryGenreName   string `json:"primaryGenreName"`
 	TrackNumber       int    `json:"trackNumber"`
 	TrackName         string `json:"trackName"`
 	TrackTimeMillis   int    `json:"trackTimeMillis"`
@@ -184,34 +185,34 @@ func truncateByPixels(s string, maxPx, fontSize float64) string {
 }
 
 const albumSvgTmplSrc = `<?xml version="1.0" encoding="UTF-8"?>
-<svg viewBox="0 0 600 210" width="600" height="210" xmlns="http://www.w3.org/2000/svg">
+<svg viewBox="0 0 600 280" width="600" height="280" xmlns="http://www.w3.org/2000/svg">
   <defs>
     <clipPath id="clip">
-      <rect x="16" y="16" width="130" height="130" rx="10"/>
+      <rect x="16" y="16" width="150" height="150" rx="12"/>
     </clipPath>
   </defs>
-  <rect width="600" height="210" rx="14" fill="{{.BgColor}}"/>
-  <line x1="180" y1="16" x2="180" y2="194" stroke="{{.DividerColor}}" stroke-width="0.5"/>
+  <rect width="600" height="280" rx="14" fill="{{.BgColor}}"/>
+  <line x1="184" y1="16" x2="184" y2="264" stroke="{{.DividerColor}}" stroke-width="0.5"/>
   {{if .ArtworkBase64 -}}
-  <image href="data:image/jpeg;base64,{{.ArtworkBase64}}" x="16" y="16" width="130" height="130" clip-path="url(#clip)" preserveAspectRatio="xMidYMid slice"/>
+  <image href="data:image/jpeg;base64,{{.ArtworkBase64}}" x="16" y="16" width="150" height="150" clip-path="url(#clip)" preserveAspectRatio="xMidYMid slice"/>
   {{- else -}}
-  <rect x="16" y="16" width="130" height="130" rx="10" fill="#3a3a3c"/>
-  <text x="81" y="88" text-anchor="middle" font-family="sans-serif" font-size="36" fill="#636366">&#9835;</text>
+  <rect x="16" y="16" width="150" height="150" rx="12" fill="#3a3a3c"/>
+  <text x="91" y="98" text-anchor="middle" font-family="sans-serif" font-size="40" fill="#636366">&#9835;</text>
   {{- end}}
-  <text x="16" y="160" font-family="sans-serif" font-size="13" font-weight="600" fill="{{.AlbumNameColor}}">{{.AlbumName}}</text>
-  <text x="16" y="176" font-family="sans-serif" font-size="11" fill="{{.ArtistColor}}">{{.ArtistName}}</text>
-  <text x="16" y="191" font-family="sans-serif" font-size="10" fill="{{.MetaColor}}">{{.Meta}}</text>
+  <text x="16" y="182" font-family="sans-serif" font-size="13" font-weight="600" fill="{{.AlbumNameColor}}">{{.AlbumName}}</text>
+  <text x="16" y="198" font-family="sans-serif" font-size="11" fill="{{.ArtistColor}}">{{.ArtistName}}</text>
+  <text x="16" y="213" font-family="sans-serif" font-size="10" fill="{{.MetaColor}}">{{.Meta}}</text>
   <text x="584" y="27" text-anchor="end" font-family="sans-serif" font-size="10" font-weight="500" fill="{{.AccentColor}}">Apple Music Card Generator</text>
   {{range .Tracks -}}
-  <text x="196" y="{{.Y}}" font-family="sans-serif" font-size="11" fill="{{$.TrackNumColor}}">{{.Number}}</text>
-  <text x="216" y="{{.Y}}" font-family="sans-serif" font-size="12" fill="{{$.TrackNameColor}}">{{.Name}}</text>
-  <line x1="196" y1="{{.LineY}}" x2="584" y2="{{.LineY}}" stroke="{{$.DividerColor}}" stroke-width="0.5"/>
+  <text x="200" y="{{.Y}}" font-family="sans-serif" font-size="11" fill="{{$.TrackNumColor}}">{{.Number}}</text>
+  <text x="220" y="{{.Y}}" font-family="sans-serif" font-size="12" fill="{{$.TrackNameColor}}">{{.Name}}</text>
+  <line x1="200" y1="{{.LineY}}" x2="584" y2="{{.LineY}}" stroke="{{$.DividerColor}}" stroke-width="0.5"/>
   {{end -}}
   {{if .RemainingCount -}}
-  <text x="196" y="192" font-family="sans-serif" font-size="11" fill="{{.MetaColor}}">他{{.RemainingCount}}曲...</text>
+  <text x="200" y="248" font-family="sans-serif" font-size="11" fill="{{.MetaColor}}">他{{.RemainingCount}}曲...</text>
   {{- end}}
-  <!-- Listen on Apple Music badge (140.62x41 → scale 0.6829 → ~96x28px, bottom-right at y=200) -->
-  <g transform="translate(488, 172) scale(0.6829)">
+  <!-- Listen on Apple Music badge (140.62x41 → scale 1.0667 → 150x44px, matches artwork width, 16px bottom margin) -->
+  <g transform="translate(16, 220) scale(1.0667)">
     <defs>
       <linearGradient id="album_badge_grad" gradientUnits="userSpaceOnUse" x1="20.1295" y1="32.4838" x2="20.1295" y2="7.9604">
         <stop offset="0" stop-color="#FA233B"/>
@@ -319,7 +320,12 @@ func handleAlbum(w http.ResponseWriter, r *http.Request) {
 	if trackCount == 0 {
 		trackCount = len(tracks)
 	}
-	meta := fmt.Sprintf("%s · %d曲 · %d分", year, trackCount, totalMin)
+	var meta string
+	if album.PrimaryGenreName != "" {
+		meta = fmt.Sprintf("%s · %s · %d曲 · %d分", year, album.PrimaryGenreName, trackCount, totalMin)
+	} else {
+		meta = fmt.Sprintf("%s · %d曲 · %d分", year, trackCount, totalMin)
+	}
 
 	artworkURL := strings.Replace(album.ArtworkUrl100, "100x100bb", "600x600bb", 1)
 	artworkB64, err := fetchArtwork(artworkURL)
@@ -328,7 +334,7 @@ func handleAlbum(w http.ResponseWriter, r *http.Request) {
 		artworkB64 = ""
 	}
 
-	const maxDisplay = 5
+	const maxDisplay = 7
 	var rows []TrackRow
 	startY := 46
 	lineSpacing := 30
@@ -340,7 +346,7 @@ func handleAlbum(w http.ResponseWriter, r *http.Request) {
 		y := startY + i*lineSpacing
 		rows = append(rows, TrackRow{
 			Number: t.TrackNumber,
-			Name:   html.EscapeString(truncateByPixels(t.TrackName, 368, 12)),
+			Name:   html.EscapeString(truncateByPixels(t.TrackName, 364, 12)),
 			Y:      y,
 			LineY:  y + 6,
 		})
@@ -348,8 +354,8 @@ func handleAlbum(w http.ResponseWriter, r *http.Request) {
 	remaining := len(tracks) - len(display)
 
 	data := AlbumCardData{
-		AlbumName:  html.EscapeString(truncateByPixels(album.CollectionName, 164, 13)),
-		ArtistName: html.EscapeString(truncateByPixels(album.ArtistName, 164, 11)),
+		AlbumName:  html.EscapeString(truncateByPixels(album.CollectionName, 168, 13)),
+		ArtistName: html.EscapeString(truncateByPixels(album.ArtistName, 168, 11)),
 		Meta:           html.EscapeString(meta),
 		ArtworkBase64:  artworkB64,
 		Tracks:         rows,
