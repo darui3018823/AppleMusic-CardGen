@@ -7,7 +7,7 @@
 *.dll
 *.so
 *.dylib
-apple-music-cardgen
+applemusiccg
 
 # Test binary, built with `go test -c`
 *.test
