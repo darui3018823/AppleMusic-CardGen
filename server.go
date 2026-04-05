@@ -16,6 +16,7 @@ import (
 	"log"
 	"net/http"
 	"net/url"
+	"os"
 	"strings"
 	"sync"
 	"text/template"
@@ -253,6 +254,12 @@ func main() {
 		http.ServeFile(w, r, "index.html")
 	})
 
-	log.Println("Serving at http://localhost:8080...")
-	log.Fatal(http.ListenAndServe(":8080", mux))
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8086"
+	}
+
+	addr := ":" + port
+	log.Printf("Serving at http://localhost:%s...", port)
+	log.Fatal(http.ListenAndServe(addr, mux))
 }
