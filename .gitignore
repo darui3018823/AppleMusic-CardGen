@@ -33,3 +33,6 @@ go.work.sum
 
 # AI
 .claude/
+
+# Older files
+feat/
