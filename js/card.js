@@ -16,7 +16,125 @@ document.addEventListener('DOMContentLoaded', () => {
     const pageDarkToggle = document.getElementById('pageDarkToggle');
 
     let cardTheme = 'dark';
+    let mode = 'track'; // 'track' | 'album'
+    let albumCollectionId = null;
+    let albumOriginalURL = null;
 
+    // ── Tab switching ────────────────────────────────────────────────────────
+    const tabTrack   = document.getElementById('tabTrack');
+    const tabAlbum   = document.getElementById('tabAlbum');
+    const trackSection = document.getElementById('trackSection');
+    const albumSection = document.getElementById('albumSection');
+
+    const tabActiveClasses   = ['bg-white', 'dark:bg-gray-700', 'text-gray-800', 'dark:text-gray-100', 'shadow-sm'];
+    const tabInactiveClasses = ['text-gray-500', 'dark:text-gray-400', 'hover:text-gray-700', 'dark:hover:text-gray-200'];
+
+    function switchTab(newMode) {
+        mode = newMode;
+        const isTrack = mode === 'track';
+
+        tabTrack.classList.toggle('bg-white', isTrack);
+        tabTrack.classList.toggle('dark:bg-gray-700', isTrack);
+        tabTrack.classList.toggle('text-gray-800', isTrack);
+        tabTrack.classList.toggle('dark:text-gray-100', isTrack);
+        tabTrack.classList.toggle('shadow-sm', isTrack);
+        tabTrack.classList.toggle('text-gray-500', !isTrack);
+        tabTrack.classList.toggle('dark:text-gray-400', !isTrack);
+
+        tabAlbum.classList.toggle('bg-white', !isTrack);
+        tabAlbum.classList.toggle('dark:bg-gray-700', !isTrack);
+        tabAlbum.classList.toggle('text-gray-800', !isTrack);
+        tabAlbum.classList.toggle('dark:text-gray-100', !isTrack);
+        tabAlbum.classList.toggle('shadow-sm', !isTrack);
+        tabAlbum.classList.toggle('text-gray-500', isTrack);
+        tabAlbum.classList.toggle('dark:text-gray-400', isTrack);
+
+        trackSection.classList.toggle('hidden', !isTrack);
+        albumSection.classList.toggle('hidden', isTrack);
+
+        // Reset preview when switching tabs
+        previewArea.classList.add('hidden');
+        emptyState.classList.remove('hidden');
+        markdownSection.classList.add('hidden');
+
+        if (!isTrack) updateAlbumPreview();
+        else updatePreview();
+    }
+
+    tabTrack.addEventListener('click', () => switchTab('track'));
+    tabAlbum.addEventListener('click', () => switchTab('album'));
+
+    // ── Album mode ───────────────────────────────────────────────────────────
+    const albumMusicURLInput  = document.getElementById('albumMusicURL');
+    const albumLookupStatus   = document.getElementById('albumLookupStatus');
+
+    function setAlbumStatus(msg, color) {
+        albumLookupStatus.textContent = msg;
+        albumLookupStatus.className = `text-xs ${color}`;
+        albumLookupStatus.classList.remove('hidden');
+    }
+
+    function parseAlbumURL(urlStr) {
+        let u;
+        try { u = new URL(urlStr); } catch { return null; }
+        if (u.hostname !== 'music.apple.com') return null;
+        const match = u.pathname.match(/\/album\/[^/]+\/(\d+)/);
+        if (!match) return null;
+        // album-only URL must NOT have ?i= (that's a track)
+        if (u.searchParams.get('i')) return null;
+        return match[1];
+    }
+
+    function updateAlbumPreview() {
+        if (!albumCollectionId) {
+            previewArea.classList.add('hidden');
+            emptyState.classList.remove('hidden');
+            markdownSection.classList.add('hidden');
+            return;
+        }
+
+        previewArea.classList.remove('hidden');
+        emptyState.classList.add('hidden');
+        markdownSection.classList.remove('hidden');
+
+        previewDark.src  = `/api/album?id=${albumCollectionId}&theme=dark`;
+        previewLight.src = `/api/album?id=${albumCollectionId}&theme=light`;
+
+        updateAlbumMarkdown();
+    }
+
+    function updateAlbumMarkdown() {
+        if (!albumCollectionId) return;
+        const cardURL = `${window.location.origin}/api/album?id=${albumCollectionId}&theme=${cardTheme}`;
+        markdownOutput.textContent = albumOriginalURL
+            ? `[![Album](${cardURL})](${albumOriginalURL})`
+            : `![Album](${cardURL})`;
+    }
+
+    albumMusicURLInput.addEventListener('input', debounce(e => {
+        const val = e.target.value.trim();
+        if (!val) {
+            albumLookupStatus.classList.add('hidden');
+            albumCollectionId = null;
+            albumOriginalURL = null;
+            updateAlbumPreview();
+            return;
+        }
+        const id = parseAlbumURL(val);
+        if (!id) {
+            setAlbumStatus('アルバムURLが認識できません。例: https://music.apple.com/jp/album/alxd/1440785663', 'text-amber-500 dark:text-amber-400');
+            albumCollectionId = null;
+            albumOriginalURL = null;
+            updateAlbumPreview();
+            return;
+        }
+        albumCollectionId = id;
+        albumOriginalURL = val;
+        setAlbumStatus(`ID: ${id} を検出しました`, 'text-green-600 dark:text-green-400');
+        updateAlbumPreview();
+    }, 500));
+
+    // ── Track mode ───────────────────────────────────────────────────────────
     function buildParams(theme) {
         return new URLSearchParams({
             title:   document.getElementById('title').value,
@@ -181,7 +299,8 @@ document.addEventListener('DOMContentLoaded', () => {
         cardThemeToggle.style.backgroundColor = isLight ? '#fb7185' : '#4b5563';
         themeLabel.textContent = isLight ? 'Light' : 'Dark';
 
-        updateMarkdown();
+        if (mode === 'album') updateAlbumMarkdown();
+        else updateMarkdown();
     });
 
     // Copy button

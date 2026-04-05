@@ -7,6 +7,7 @@ package main
 import (
 	"bytes"
 	"encoding/base64"
+	"encoding/json"
 	"fmt"
 	"html"
 	"image"
@@ -91,6 +92,299 @@ const svgTmplSrc = `<?xml version="1.0" encoding="UTF-8"?>
 </svg>`
 
 var cardTmpl = template.Must(template.New("card").Parse(svgTmplSrc))
+
+// ── Album card ────────────────────────────────────────────────────────────────
+
+type iTunesResult struct {
+	WrapperType       string `json:"wrapperType"`
+	CollectionName    string `json:"collectionName"`
+	ArtistName        string `json:"artistName"`
+	ArtworkUrl100     string `json:"artworkUrl100"`
+	ReleaseDate       string `json:"releaseDate"`
+	TrackCount        int    `json:"trackCount"`
+	CollectionViewUrl string `json:"collectionViewUrl"`
+	TrackNumber       int    `json:"trackNumber"`
+	TrackName         string `json:"trackName"`
+	TrackTimeMillis   int    `json:"trackTimeMillis"`
+}
+
+type iTunesResponse struct {
+	ResultCount int            `json:"resultCount"`
+	Results     []iTunesResult `json:"results"`
+}
+
+type TrackRow struct {
+	Number int
+	Name   string
+	Y      int
+	LineY  int
+}
+
+type AlbumCardData struct {
+	AlbumName      string
+	ArtistName     string
+	Meta           string
+	ArtworkBase64  string
+	Tracks         []TrackRow
+	RemainingCount int
+	BgColor        string
+	DividerColor   string
+	AlbumNameColor string
+	ArtistColor    string
+	MetaColor      string
+	TrackNumColor  string
+	TrackNameColor string
+	AccentColor    string
+	HintColor      string
+}
+
+func truncate(s string, max int) string {
+	runes := []rune(s)
+	if len(runes) > max {
+		return string(runes[:max]) + "..."
+	}
+	return s
+}
+
+// isFullWidth returns true for CJK / Hiragana / Katakana and other full-width glyphs.
+func isFullWidth(r rune) bool {
+	return (r >= 0x1100 && r <= 0x115F) ||
+		(r >= 0x2E80 && r <= 0x303F) ||
+		(r >= 0x3040 && r <= 0x33FF) ||
+		(r >= 0x3400 && r <= 0x4DBF) ||
+		(r >= 0x4E00 && r <= 0x9FFF) ||
+		(r >= 0xAC00 && r <= 0xD7AF) ||
+		(r >= 0xF900 && r <= 0xFAFF) ||
+		(r >= 0xFE30 && r <= 0xFE4F) ||
+		(r >= 0xFF00 && r <= 0xFF60) ||
+		(r >= 0xFFE0 && r <= 0xFFE6)
+}
+
+// truncateByPixels clips s so its estimated rendered width stays within maxPx
+// at the given font size, appending "..." when truncated.
+// Full-width glyphs are estimated at fontSize px; half-width at fontSize*0.6 px.
+func truncateByPixels(s string, maxPx, fontSize float64) string {
+	ellipsisPx := fontSize * 0.6 * 3 // width of "..."
+	var width float64
+	runes := []rune(s)
+	for i, r := range runes {
+		var cw float64
+		if isFullWidth(r) {
+			cw = fontSize
+		} else {
+			cw = fontSize * 0.6
+		}
+		// If adding this char would leave no room for "..." and there are chars after it, cut here.
+		if i < len(runes)-1 && width+cw+ellipsisPx > maxPx {
+			return string(runes[:i]) + "..."
+		}
+		width += cw
+	}
+	return s
+}
+
+const albumSvgTmplSrc = `<?xml version="1.0" encoding="UTF-8"?>
+<svg viewBox="0 0 600 210" width="600" height="210" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <clipPath id="clip">
+      <rect x="16" y="16" width="130" height="130" rx="10"/>
+    </clipPath>
+  </defs>
+  <rect width="600" height="210" rx="14" fill="{{.BgColor}}"/>
+  <line x1="180" y1="16" x2="180" y2="194" stroke="{{.DividerColor}}" stroke-width="0.5"/>
+  {{if .ArtworkBase64 -}}
+  <image href="data:image/jpeg;base64,{{.ArtworkBase64}}" x="16" y="16" width="130" height="130" clip-path="url(#clip)" preserveAspectRatio="xMidYMid slice"/>
+  {{- else -}}
+  <rect x="16" y="16" width="130" height="130" rx="10" fill="#3a3a3c"/>
+  <text x="81" y="88" text-anchor="middle" font-family="sans-serif" font-size="36" fill="#636366">&#9835;</text>
+  {{- end}}
+  <text x="16" y="160" font-family="sans-serif" font-size="13" font-weight="600" fill="{{.AlbumNameColor}}">{{.AlbumName}}</text>
+  <text x="16" y="176" font-family="sans-serif" font-size="11" fill="{{.ArtistColor}}">{{.ArtistName}}</text>
+  <text x="16" y="191" font-family="sans-serif" font-size="10" fill="{{.MetaColor}}">{{.Meta}}</text>
+  <text x="584" y="27" text-anchor="end" font-family="sans-serif" font-size="10" font-weight="500" fill="{{.AccentColor}}">Apple Music Card Generator</text>
+  {{range .Tracks -}}
+  <text x="196" y="{{.Y}}" font-family="sans-serif" font-size="11" fill="{{$.TrackNumColor}}">{{.Number}}</text>
+  <text x="216" y="{{.Y}}" font-family="sans-serif" font-size="12" fill="{{$.TrackNameColor}}">{{.Name}}</text>
+  <line x1="196" y1="{{.LineY}}" x2="584" y2="{{.LineY}}" stroke="{{$.DividerColor}}" stroke-width="0.5"/>
+  {{end -}}
+  {{if .RemainingCount -}}
+  <text x="196" y="192" font-family="sans-serif" font-size="11" fill="{{.MetaColor}}">他{{.RemainingCount}}曲...</text>
+  {{- end}}
+  <!-- Listen on Apple Music badge (140.62x41 → scale 0.6829 → ~96x28px, bottom-right at y=200) -->
+  <g transform="translate(488, 172) scale(0.6829)">
+    <defs>
+      <linearGradient id="album_badge_grad" gradientUnits="userSpaceOnUse" x1="20.1295" y1="32.4838" x2="20.1295" y2="7.9604">
+        <stop offset="0" stop-color="#FA233B"/>
+        <stop offset="1" stop-color="#FB5C74"/>
+      </linearGradient>
+    </defs>
+    <path fill="#A6A6A6" d="M130.09,0H9.53C9.17,0,8.81,0,8.44,0C8.13,0,7.83,0.01,7.52,0.01c-0.67,0.02-1.34,0.06-2,0.18c-0.67,0.12-1.29,0.32-1.9,0.63C3.02,1.12,2.47,1.52,2,2C1.52,2.47,1.12,3.02,0.82,3.62c-0.31,0.61-0.51,1.23-0.63,1.9c-0.12,0.66-0.16,1.33-0.18,2C0.01,7.83,0,8.14,0,8.44c0,0.36,0,0.73,0,1.09v20.93c0,0.37,0,0.73,0,1.09c0,0.31,0.01,0.61,0.02,0.92c0.02,0.67,0.06,1.34,0.18,2c0.12,0.67,0.31,1.3,0.63,1.9c0.3,0.6,0.7,1.14,1.18,1.61c0.47,0.48,1.02,0.88,1.62,1.18c0.61,0.31,1.23,0.51,1.9,0.63c0.66,0.12,1.34,0.16,2,0.18C7.83,39.99,8.13,40,8.44,40c0.37,0,0.73,0,1.09,0h120.56c0.36,0,0.72,0,1.08,0c0.3,0,0.62,0,0.92-0.01c0.67-0.02,1.34-0.06,2-0.18c0.67-0.12,1.29-0.32,1.91-0.63c0.6-0.3,1.14-0.7,1.62-1.18c0.48-0.47,0.87-1.02,1.18-1.61c0.31-0.61,0.51-1.23,0.62-1.9c0.12-0.66,0.16-1.33,0.19-2c0-0.31,0-0.61,0-0.92c0.01-0.36,0.01-0.72,0.01-1.09V9.54c0-0.37,0-0.73-0.01-1.09c0-0.31,0-0.61,0-0.92c-0.02-0.67-0.06-1.34-0.19-2c-0.11-0.67-0.31-1.29-0.62-1.9c-0.31-0.6-0.71-1.15-1.18-1.62c-0.47-0.47-1.02-0.87-1.62-1.18c-0.62-0.31-1.24-0.51-1.91-0.63c-0.66-0.12-1.33-0.16-2-0.18c-0.3,0-0.62-0.01-0.92-0.01C130.82,0,130.45,0,130.09,0L130.09,0z"/>
+    <path d="M8.44,39.12c-0.3,0-0.6,0-0.9-0.01c-0.56-0.02-1.22-0.05-1.87-0.16c-0.61-0.11-1.15-0.29-1.66-0.55c-0.52-0.26-0.99-0.61-1.4-1.02c-0.41-0.41-0.75-0.87-1.02-1.4c-0.26-0.5-0.44-1.05-0.54-1.66c-0.12-0.67-0.15-1.36-0.17-1.88c-0.01-0.21-0.01-0.91-0.01-0.91V8.44c0,0,0.01-0.69,0.01-0.89C0.9,7.03,0.93,6.34,1.05,5.68C1.16,5.06,1.34,4.52,1.6,4.02c0.27-0.52,0.61-0.99,1.02-1.4C3.03,2.2,3.5,1.86,4.01,1.6c0.51-0.26,1.06-0.44,1.65-0.54C6.34,0.93,7.02,0.9,7.54,0.89l0.9-0.01h122.73l0.91,0.01c0.51,0.01,1.2,0.04,1.86,0.16c0.6,0.11,1.15,0.28,1.67,0.55c0.51,0.26,0.98,0.61,1.39,1.02c0.41,0.41,0.75,0.88,1.02,1.4c0.26,0.51,0.43,1.05,0.54,1.65c0.12,0.63,0.15,1.28,0.17,1.89c0,0.28,0,0.59,0,0.89c0.01,0.38,0.01,0.73,0.01,1.09v20.93c0,0.36,0,0.72-0.01,1.08c0,0.33,0,0.62,0,0.93c-0.02,0.59-0.06,1.24-0.17,1.85c-0.1,0.61-0.28,1.16-0.54,1.67c-0.27,0.52-0.61,0.99-1.02,1.39c-0.41,0.42-0.88,0.76-1.4,1.02c-0.52,0.26-1.05,0.44-1.67,0.55c-0.64,0.12-1.3,0.15-1.87,0.16c-0.29,0.01-0.6,0.01-0.9,0.01l-1.08,0L8.44,39.12z"/>
+    <path fill="#FFFFFF" d="M42.12,14.75h-3.71V8.8h0.92v5.11h2.79V14.75z"/>
+    <path fill="#FFFFFF" d="M43.21,8.93c0-0.31,0.24-0.54,0.57-0.54s0.57,0.24,0.57,0.54c0,0.31-0.24,0.54-0.57,0.54S43.21,9.23,43.21,8.93z M43.34,10.26h0.88v4.49h-0.88V10.26z"/>
+    <path fill="#FFFFFF" d="M47.3,10.17c1.01,0,1.67,0.47,1.76,1.26h-0.85c-0.08-0.33-0.4-0.54-0.91-0.54c-0.5,0-0.87,0.24-0.87,0.59c0,0.27,0.23,0.44,0.71,0.55l0.75,0.17c0.85,0.2,1.25,0.56,1.25,1.23c0,0.85-0.79,1.41-1.86,1.41c-1.07,0-1.77-0.48-1.84-1.28h0.89c0.11,0.35,0.44,0.56,0.98,0.56c0.55,0,0.95-0.25,0.95-0.61c0-0.27-0.21-0.44-0.66-0.55l-0.78-0.18c-0.85-0.2-1.25-0.59-1.25-1.26C45.56,10.73,46.29,10.17,47.3,10.17z"/>
+    <path fill="#FFFFFF" d="M51.52,9.14v1.14h0.97v0.75h-0.97v2.31c0,0.47,0.19,0.68,0.64,0.68c0.14,0,0.21-0.01,0.34-0.02v0.74c-0.14,0.03-0.31,0.05-0.48,0.05c-0.99,0-1.38-0.35-1.38-1.21v-2.54h-0.71v-0.75h0.71V9.14H51.52z"/>
+    <path fill="#FFFFFF" d="M57.42,13.54c-0.2,0.81-0.92,1.3-1.95,1.3c-1.29,0-2.08-0.88-2.08-2.32c0-1.44,0.81-2.35,2.07-2.35c1.25,0,2.01,0.85,2.01,2.27v0.31H54.3v0.05c0.03,0.79,0.49,1.29,1.2,1.29c0.54,0,0.9-0.19,1.07-0.55H57.42z M54.3,12.09h2.27c-0.02-0.71-0.45-1.16-1.11-1.16C54.81,10.93,54.35,11.39,54.3,12.09z"/>
+    <path fill="#FFFFFF" d="M58.67,10.26h0.85v0.71h0.07c0.22-0.5,0.66-0.8,1.34-0.8c1,0,1.56,0.6,1.56,1.67v2.91H61.6v-2.69c0-0.72-0.31-1.08-0.97-1.08c-0.66,0-1.07,0.44-1.07,1.14v2.63h-0.89V10.26z"/>
+    <path fill="#FFFFFF" d="M66.09,12.5c0-1.45,0.81-2.33,2.12-2.33c1.31,0,2.12,0.88,2.12,2.33c0,1.46-0.81,2.34-2.12,2.34C66.9,14.84,66.09,13.96,66.09,12.5z M69.42,12.5c0-0.97-0.44-1.54-1.2-1.54c-0.77,0-1.21,0.57-1.21,1.54c0,0.98,0.43,1.55,1.21,1.55C68.98,14.05,69.42,13.48,69.42,12.5z"/>
+    <path fill="#FFFFFF" d="M71.53,10.26h0.85v0.71h0.07c0.22-0.5,0.66-0.8,1.34-0.8c1,0,1.56,0.6,1.56,1.67v2.91h-0.89v-2.69c0-0.72-0.31-1.08-0.97-1.08s-1.07,0.44-1.07,1.14v2.63h-0.89V10.26z"/>
+    <path fill="#FFFFFF" d="M46.04,27.84H41.3l-1.14,3.36h-2.01l4.49-12.43h2.08l4.49,12.43h-2.04L46.04,27.84z M41.79,26.29h3.76l-1.85-5.45h-0.05L41.79,26.29z"/>
+    <path fill="#FFFFFF" d="M58.9,26.67c0,2.82-1.51,4.62-3.78,4.62c-1.29,0-2.32-0.58-2.85-1.58h-0.04v4.49h-1.86V22.14h1.8v1.51h0.03c0.52-0.97,1.62-1.6,2.89-1.6C57.38,22.04,58.9,23.86,58.9,26.67z M56.99,26.67c0-1.83-0.95-3.04-2.39-3.04c-1.42,0-2.38,1.23-2.38,3.04c0,1.83,0.96,3.05,2.38,3.05C56.04,29.72,56.99,28.52,56.99,26.67z"/>
+    <path fill="#FFFFFF" d="M68.86,26.67c0,2.82-1.51,4.62-3.78,4.62c-1.29,0-2.32-0.58-2.85-1.58h-0.04v4.49h-1.86V22.14h1.8v1.51h0.03c0.52-0.97,1.62-1.6,2.89-1.6C67.35,22.04,68.86,23.86,68.86,26.67z M66.95,26.67c0-1.83-0.95-3.04-2.39-3.04c-1.42,0-2.38,1.23-2.38,3.04c0,1.83,0.96,3.05,2.38,3.05C66,29.72,66.95,28.52,66.95,26.67z"/>
+    <path fill="#FFFFFF" d="M70.36,18.77h1.86V31.2h-1.86V18.77z"/>
+    <path fill="#FFFFFF" d="M81.9,28.54c-0.25,1.65-1.85,2.77-3.9,2.77c-2.63,0-4.27-1.77-4.27-4.6c0-2.84,1.65-4.69,4.19-4.69c2.51,0,4.08,1.72,4.08,4.47v0.64h-6.4v0.11c0,1.55,0.97,2.57,2.44,2.57c1.03,0,1.84-0.49,2.09-1.27H81.9z M75.61,25.83h4.53c-0.04-1.39-0.93-2.3-2.22-2.3C76.64,23.53,75.71,24.46,75.61,25.83z"/>
+    <path fill="#FFFFFF" d="M98.05,31.2v-9.15h-0.06l-3.75,9.05h-1.43l-3.76-9.05H89v9.15h-1.76V18.77h2.23l4.02,9.81h0.07l4.01-9.81h2.24V31.2H98.05z"/>
+    <path fill="#FFFFFF" d="M109.72,31.2h-1.78v-1.56h-0.04c-0.52,1.09-1.42,1.66-2.81,1.66c-1.97,0-3.18-1.27-3.18-3.35v-5.81h1.86v5.45c0,1.38,0.65,2.11,1.94,2.11c1.34,0,2.15-0.93,2.15-2.34v-5.22h1.86V31.2z"/>
+    <path fill="#FFFFFF" d="M115.01,22.04c2.01,0,3.45,1.11,3.49,2.71h-1.75c-0.08-0.8-0.76-1.29-1.79-1.29c-1.01,0-1.68,0.46-1.68,1.17c0,0.54,0.45,0.9,1.39,1.14l1.53,0.35c1.83,0.44,2.51,1.11,2.51,2.44c0,1.64-1.55,2.76-3.76,2.76c-2.14,0-3.57-1.09-3.71-2.75h1.84c0.13,0.87,0.83,1.34,1.96,1.34c1.11,0,1.81-0.46,1.81-1.18c0-0.56-0.34-0.86-1.29-1.1l-1.62-0.4c-1.64-0.4-2.46-1.23-2.46-2.49C111.46,23.13,112.9,22.04,115.01,22.04z"/>
+    <path fill="#FFFFFF" d="M120.16,19.75c0-0.59,0.48-1.07,1.08-1.07c0.6,0,1.09,0.47,1.09,1.07c0,0.59-0.48,1.06-1.09,1.06C120.64,20.81,120.16,20.34,120.16,19.75z M120.3,22.14h1.86v9.06h-1.86V22.14z"/>
+    <path fill="#FFFFFF" d="M130.17,25.26c-0.16-0.96-0.91-1.67-2.14-1.67c-1.43,0-2.38,1.2-2.38,3.08c0,1.93,0.96,3.09,2.39,3.09c1.15,0,1.91-0.58,2.12-1.63h1.79c-0.21,1.9-1.73,3.18-3.93,3.18c-2.58,0-4.27-1.77-4.27-4.64c0-2.82,1.69-4.64,4.25-4.64c2.33,0,3.77,1.47,3.93,3.23H130.17z"/>
+    <path fill-rule="evenodd" clip-rule="evenodd" fill="url(#album_badge_grad)" d="M32.71,15.29c0-0.3,0-0.6,0-0.9c0-0.25,0-0.51-0.01-0.76c-0.01-0.55-0.05-1.11-0.15-1.65c-0.1-0.55-0.26-1.07-0.52-1.57c-0.25-0.49-0.58-0.95-0.97-1.34c-0.39-0.39-0.84-0.72-1.34-0.97c-0.5-0.26-1.02-0.42-1.57-0.52c-0.55-0.1-1.1-0.13-1.65-0.15c-0.25-0.01-0.51-0.01-0.76-0.01c-0.3,0-0.6,0-0.9,0h-9.42c-0.3,0-0.6,0-0.9,0c-0.25,0-0.51,0-0.76,0.01c-0.55,0.01-1.11,0.05-1.65,0.15c-0.55,0.1-1.07,0.26-1.57,0.52C10.04,8.35,9.59,8.67,9.2,9.07C8.8,9.46,8.48,9.91,8.22,10.4c-0.26,0.5-0.42,1.02-0.52,1.57c-0.1,0.55-0.13,1.1-0.15,1.65c-0.01,0.25-0.01,0.51-0.01,0.76c0,0.3,0,0.6,0,0.9v9.42c0,0.3,0,0.6,0,0.9c0,0.25,0,0.51,0.01,0.76c0.01,0.55,0.05,1.11,0.15,1.65c0.1,0.55,0.26,1.07,0.52,1.57c0.25,0.49,0.58,0.95,0.97,1.34c0.39,0.39,0.84,0.72,1.34,0.97c0.5,0.26,1.02,0.42,1.57,0.52c0.55,0.1,1.1,0.13,1.65,0.15c0.25,0.01,0.51,0.01,0.76,0.01c0.3,0,0.6,0,0.9,0h9.42c0.3,0,0.6,0,0.9,0c0.25,0,0.51,0,0.76-0.01c0.55-0.01,1.11-0.05,1.65-0.15c0.55-0.1,1.07-0.26,1.57-0.52c0.49-0.25,0.95-0.58,1.34-0.97c0.39-0.39,0.72-0.84,0.97-1.34c0.26-0.5,0.42-1.02,0.52-1.57c0.1-0.55,0.13-1.1,0.15-1.65c0.01-0.25,0.01-0.51,0.01-0.76c0-0.3,0-0.6,0-0.9V15.29z"/>
+    <path fill-rule="evenodd" clip-rule="evenodd" fill="#FFFFFF" d="M25.34,11.26c-0.06,0.01-0.6,0.1-0.67,0.11l-7.48,1.51l0,0c-0.2,0.04-0.35,0.11-0.47,0.21c-0.14,0.12-0.22,0.29-0.25,0.49c-0.01,0.04-0.02,0.13-0.02,0.25c0,0,0,7.64,0,9.36c0,0.22-0.02,0.43-0.17,0.61c-0.15,0.18-0.33,0.24-0.55,0.28l-0.49,0.1c-0.62,0.12-1.02,0.21-1.38,0.35c-0.35,0.14-0.61,0.31-0.82,0.52c-0.41,0.43-0.58,1.02-0.52,1.56c0.05,0.47,0.26,0.91,0.62,1.25c0.24,0.22,0.55,0.39,0.91,0.47c0.37,0.08,0.77,0.05,1.35-0.07c0.31-0.06,0.6-0.16,0.87-0.32c0.27-0.16,0.51-0.38,0.69-0.64c0.18-0.26,0.3-0.55,0.37-0.86c0.07-0.32,0.08-0.61,0.08-0.93V17.4c0-0.44,0.12-0.55,0.47-0.63c0,0,6.22-1.25,6.51-1.31c0.4-0.08,0.6,0.04,0.6,0.46l0,5.54c0,0.22,0,0.44-0.15,0.62c-0.15,0.18-0.33,0.24-0.55,0.28c-0.16,0.03-0.33,0.07-0.49,0.1c-0.62,0.12-1.02,0.21-1.38,0.35c-0.35,0.14-0.61,0.31-0.82,0.52c-0.41,0.43-0.59,1.02-0.54,1.56c0.05,0.47,0.27,0.91,0.64,1.25c0.24,0.22,0.55,0.39,0.91,0.46c0.37,0.08,0.77,0.05,1.35-0.07c0.31-0.06,0.6-0.15,0.87-0.32c0.27-0.16,0.51-0.38,0.69-0.64c0.18-0.26,0.3-0.55,0.37-0.86c0.07-0.32,0.07-0.61,0.07-0.93V11.92C25.97,11.49,25.74,11.23,25.34,11.26z"/>
+  </g>
+</svg>`
+
+var albumTmpl = template.Must(template.New("album").Parse(albumSvgTmplSrc))
+
+func handleAlbum(w http.ResponseWriter, r *http.Request) {
+	q := r.URL.Query()
+	id := q.Get("id")
+	theme := q.Get("theme")
+
+	if id == "" {
+		http.Error(w, "missing id", http.StatusBadRequest)
+		return
+	}
+	for _, c := range id {
+		if c < '0' || c > '9' {
+			http.Error(w, "invalid id: digits only", http.StatusBadRequest)
+			return
+		}
+	}
+	if theme != "light" {
+		theme = "dark"
+	}
+
+	client := &http.Client{Timeout: 8 * time.Second}
+	apiURL := fmt.Sprintf("https://itunes.apple.com/lookup?id=%s&entity=song&country=jp", id)
+	resp, err := client.Get(apiURL)
+	if err != nil {
+		http.Error(w, "iTunes API request failed", http.StatusBadGateway)
+		return
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(io.LimitReader(resp.Body, 2<<20))
+	if err != nil {
+		http.Error(w, "read failed", http.StatusBadGateway)
+		return
+	}
+
+	var itunes iTunesResponse
+	if err := json.Unmarshal(body, &itunes); err != nil {
+		http.Error(w, "parse failed", http.StatusBadGateway)
+		return
+	}
+	if itunes.ResultCount == 0 {
+		http.Error(w, "album not found", http.StatusNotFound)
+		return
+	}
+
+	var album iTunesResult
+	var tracks []iTunesResult
+	for _, res := range itunes.Results {
+		switch res.WrapperType {
+		case "collection":
+			album = res
+		case "track":
+			tracks = append(tracks, res)
+		}
+	}
+
+	if album.CollectionName == "" {
+		http.Error(w, "album not found", http.StatusNotFound)
+		return
+	}
+
+	var totalMs int
+	for _, t := range tracks {
+		totalMs += t.TrackTimeMillis
+	}
+	totalMin := totalMs / 1000 / 60
+
+	year := ""
+	if len(album.ReleaseDate) >= 4 {
+		year = album.ReleaseDate[:4]
+	}
+	trackCount := album.TrackCount
+	if trackCount == 0 {
+		trackCount = len(tracks)
+	}
+	meta := fmt.Sprintf("%s · %d曲 · %d分", year, trackCount, totalMin)
+
+	artworkURL := strings.Replace(album.ArtworkUrl100, "100x100bb", "600x600bb", 1)
+	artworkB64, err := fetchArtwork(artworkURL)
+	if err != nil {
+		log.Printf("album artwork fetch failed (%s): %v", artworkURL, err)
+		artworkB64 = ""
+	}
+
+	const maxDisplay = 5
+	var rows []TrackRow
+	startY := 46
+	lineSpacing := 30
+	display := tracks
+	if len(display) > maxDisplay {
+		display = display[:maxDisplay]
+	}
+	for i, t := range display {
+		y := startY + i*lineSpacing
+		rows = append(rows, TrackRow{
+			Number: t.TrackNumber,
+			Name:   html.EscapeString(truncateByPixels(t.TrackName, 368, 12)),
+			Y:      y,
+			LineY:  y + 6,
+		})
+	}
+	remaining := len(tracks) - len(display)
+
+	data := AlbumCardData{
+		AlbumName:  html.EscapeString(truncateByPixels(album.CollectionName, 164, 13)),
+		ArtistName: html.EscapeString(truncateByPixels(album.ArtistName, 164, 11)),
+		Meta:           html.EscapeString(meta),
+		ArtworkBase64:  artworkB64,
+		Tracks:         rows,
+		RemainingCount: remaining,
+	}
+
+	if theme == "dark" {
+		data.BgColor = "#1c1c1e"
+		data.DividerColor = "#3a3a3c"
+		data.AlbumNameColor = "#ffffff"
+		data.ArtistColor = "#8e8e93"
+		data.MetaColor = "#636366"
+		data.TrackNumColor = "#636366"
+		data.TrackNameColor = "#ffffff"
+		data.AccentColor = "#d6003b"
+		data.HintColor = "#636366"
+	} else {
+		data.BgColor = "#f8f8fa"
+		data.DividerColor = "#d1d1d6"
+		data.AlbumNameColor = "#1c1c1e"
+		data.ArtistColor = "#6c6c70"
+		data.MetaColor = "#aeaeb2"
+		data.TrackNumColor = "#aeaeb2"
+		data.TrackNameColor = "#1c1c1e"
+		data.AccentColor = "#f0233b"
+		data.HintColor = "#aeaeb2"
+	}
+
+	w.Header().Set("Content-Type", "image/svg+xml; charset=utf-8")
+	w.Header().Set("Cache-Control", "public, max-age=3600")
+
+	if err := albumTmpl.Execute(w, data); err != nil {
+		log.Printf("album template error: %v", err)
+	}
+}
 
 var artworkCache sync.Map
 
@@ -239,6 +533,7 @@ func main() {
 
 	mux.HandleFunc("/api/lookup", handleLookup)
 	mux.HandleFunc("/api/card", handleCard)
+	mux.HandleFunc("/api/album", handleAlbum)
 	mux.HandleFunc("/script.js", func(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/js/script.js", http.StatusMovedPermanently)
 	})
