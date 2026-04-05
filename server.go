@@ -34,6 +34,7 @@ type CardData struct {
 	TitleColor    string
 	AccentColor   string
 	SubColor      string
+	Meta          string // "YYYY · M:SS" など（空なら非表示）
 }
 
 const svgTmplSrc = `<?xml version="1.0" encoding="UTF-8"?>
@@ -50,10 +51,11 @@ const svgTmplSrc = `<?xml version="1.0" encoding="UTF-8"?>
   <rect x="10" y="10" width="110" height="110" rx="10" fill="#3a3a3c"/>
   <text x="65" y="72" text-anchor="middle" font-family="sans-serif" font-size="28" fill="#636366">&#9835;</text>
   {{- end}}
-  <text x="504" y="24" text-anchor="end" font-family="sans-serif" font-size="11" font-weight="500" fill="{{.AccentColor}}">Apple Music</text>
-  <text x="132" y="44" font-family="sans-serif" font-size="17" font-weight="600" fill="{{.TitleColor}}">{{.Title}}</text>
-  <text x="132" y="64" font-family="sans-serif" font-size="13" fill="{{.AccentColor}}">{{.Artist}}</text>
-  <text x="132" y="81" font-family="sans-serif" font-size="12" fill="{{.SubColor}}">{{.Album}}</text>
+  <text x="504" y="19" text-anchor="end" font-family="sans-serif" font-size="10" font-weight="500" fill="{{.AccentColor}}">Apple Music Card Generator</text>
+  <text x="128" y="40" font-family="sans-serif" font-size="18" font-weight="600" fill="{{.TitleColor}}">{{.Title}}</text>
+  <text x="128" y="61" font-family="sans-serif" font-size="16" fill="{{.AccentColor}}">{{.Artist}}</text>
+  <text x="128" y="83" font-family="sans-serif" font-size="14" fill="{{.SubColor}}">{{.Album}}</text>
+  {{if .Meta}}<text x="128" y="106" font-family="sans-serif" font-size="12" fill="{{.SubColor}}">{{.Meta}}</text>{{end}}
   <!-- Listen on Apple Music badge (140.62x41 → scale 0.6829 → ~96x28px, bottom-right at y=120) -->
   <g transform="translate(414, 92) scale(0.6829)">
     <defs>
@@ -176,6 +178,8 @@ func handleCard(w http.ResponseWriter, r *http.Request) {
 	album := q.Get("album")
 	artworkURL := q.Get("artwork")
 	theme := q.Get("theme")
+	year := q.Get("year")
+	dur := q.Get("dur")
 
 	if title == "" || artist == "" || album == "" || artworkURL == "" {
 		http.Error(w, "missing required parameters: title, artist, album, artwork", http.StatusBadRequest)
@@ -191,11 +195,22 @@ func handleCard(w http.ResponseWriter, r *http.Request) {
 		artworkB64 = ""
 	}
 
+	var meta string
+	switch {
+	case year != "" && dur != "":
+		meta = html.EscapeString(year) + " · " + html.EscapeString(dur)
+	case year != "":
+		meta = html.EscapeString(year)
+	case dur != "":
+		meta = html.EscapeString(dur)
+	}
+
 	data := CardData{
 		Title:         html.EscapeString(title),
 		Artist:        html.EscapeString(artist),
 		Album:         html.EscapeString(album),
 		ArtworkBase64: artworkB64,
+		Meta:          meta,
 	}
 
 	if theme == "dark" {

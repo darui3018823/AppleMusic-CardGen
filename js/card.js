@@ -23,8 +23,21 @@ document.addEventListener('DOMContentLoaded', () => {
             artist:  document.getElementById('artist').value,
             album:   document.getElementById('album').value,
             artwork: document.getElementById('artwork').value,
+            year:    document.getElementById('year').value,
+            dur:     document.getElementById('dur').value,
             theme,
         }).toString();
+    }
+
+    function formatDuration(ms) {
+        const totalSec = Math.floor(ms / 1000);
+        const hours = Math.floor(totalSec / 3600);
+        const mins  = Math.floor((totalSec % 3600) / 60);
+        const secs  = totalSec % 60;
+        const ss = String(secs).padStart(2, '0');
+        return hours > 0
+            ? `${hours}:${String(mins).padStart(2, '0')}:${ss}`
+            : `${mins}:${ss}`;
     }
 
     function isReady() {
@@ -70,7 +83,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const debouncedUpdate = debounce(updatePreview, 400);
 
-    ['title', 'artist', 'album', 'artwork'].forEach(id => {
+    ['title', 'artist', 'album', 'artwork', 'year', 'dur'].forEach(id => {
         document.getElementById(id).addEventListener('input', debouncedUpdate);
     });
     document.getElementById('link').addEventListener('input', updateMarkdown);
@@ -139,6 +152,8 @@ document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('album').value   = track.collectionName;
             document.getElementById('artwork').value = track.artworkUrl100.replace('/100x100bb.jpg', '/600x600bb.jpg');
             document.getElementById('link').value    = parsed.originalURL;
+            document.getElementById('year').value    = track.releaseDate ? track.releaseDate.substring(0, 4) : '';
+            document.getElementById('dur').value     = track.trackTimeMillis ? formatDuration(track.trackTimeMillis) : '';
 
             setStatus(`入力しました: ${track.trackName}`, 'text-green-600 dark:text-green-400');
             updatePreview();
