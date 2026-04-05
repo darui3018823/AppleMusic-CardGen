@@ -70,7 +70,21 @@
                 <!-- Left: Form -->
                 <div
                     class="bg-white/70 dark:bg-gray-800/70 backdrop-blur-xl rounded-3xl p-6 shadow-lg shadow-gray-200/50 dark:shadow-black/20 ring-1 ring-gray-200/50 dark:ring-gray-700/50 space-y-4">
-                    <h2 class="text-xs font-semibold tracking-widest text-gray-500 dark:text-gray-400 uppercase">
+                    <!-- Apple Music URL auto-fill -->
+                    <div class="space-y-1.5">
+                        <label for="appleMusicURL"
+                            class="block text-xs font-semibold tracking-wider text-gray-500 dark:text-gray-400">
+                            Apple Music URLから自動入力
+                        </label>
+                        <input type="url" id="appleMusicURL" autocomplete="off"
+                            placeholder="https://music.apple.com/jp/album/...?i=..."
+                            class="w-full px-4 py-2.5 bg-white dark:bg-gray-900 border-0 rounded-xl focus:ring-2 focus:ring-primary-400 outline-none dark:text-white placeholder-gray-400 shadow-sm transition-all text-sm">
+                        <p id="lookupStatus" class="text-xs hidden"></p>
+                    </div>
+
+                    <hr class="border-gray-200 dark:border-gray-700">
+
+                    <h2 class="text-xs font-semibold tracking-widest text-gray-500 dark:text-gray-400">
                         Track Info
                     </h2>
 

@@ -121,6 +121,33 @@ func fetchArtwork(rawURL string) (string, error) {
 	return encoded, nil
 }
 
+func handleLookup(w http.ResponseWriter, r *http.Request) {
+	trackID := r.URL.Query().Get("id")
+	country := r.URL.Query().Get("country")
+	if trackID == "" || country == "" {
+		http.Error(w, "missing id or country", http.StatusBadRequest)
+		return
+	}
+
+	client := &http.Client{Timeout: 5 * time.Second}
+	apiURL := fmt.Sprintf("https://itunes.apple.com/lookup?id=%s&country=%s", trackID, country)
+	resp, err := client.Get(apiURL)
+	if err != nil {
+		http.Error(w, "iTunes API request failed", http.StatusBadGateway)
+		return
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(io.LimitReader(resp.Body, 1<<20))
+	if err != nil {
+		http.Error(w, "read failed", http.StatusBadGateway)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.Write(body)
+}
+
 func handleCard(w http.ResponseWriter, r *http.Request) {
 	q := r.URL.Query()
 	title := q.Get("title")
@@ -179,6 +206,7 @@ func handleCard(w http.ResponseWriter, r *http.Request) {
 func main() {
 	mux := http.NewServeMux()
 
+	mux.HandleFunc("/api/lookup", handleLookup)
 	mux.HandleFunc("/api/card", handleCard)
 	mux.HandleFunc("/script.js", func(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/js/script.js", http.StatusMovedPermanently)
