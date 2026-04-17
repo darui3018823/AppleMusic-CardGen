@@ -118,10 +118,36 @@ type iTunesResponse struct {
 }
 
 type TrackRow struct {
-	Number int
-	Name   string
-	Y      int
-	LineY  int
+	Number   int
+	Name     string
+	Duration string
+	Y        int
+	LineY    int
+}
+
+func formatTrackDuration(ms int) string {
+	if ms <= 0 {
+		return ""
+	}
+	s := ms / 1000
+	h := s / 3600
+	m := (s % 3600) / 60
+	sec := s % 60
+	if h > 0 {
+		return fmt.Sprintf("%d:%02d:%02d", h, m, sec)
+	}
+	return fmt.Sprintf("%d:%02d", m, sec)
+}
+
+func stripAlbumTypeSuffix(name string) string {
+	for _, suffix := range []string{
+		" - Single", " - EP", " - Maxi Single", " - Original Soundtrack",
+	} {
+		if strings.HasSuffix(name, suffix) {
+			return strings.TrimSuffix(name, suffix)
+		}
+	}
+	return name
 }
 
 type AlbumCardData struct {
@@ -211,6 +237,7 @@ const albumSvgTmplSrc = `<?xml version="1.0" encoding="UTF-8"?>
   {{range .Tracks -}}
   <text x="200" y="{{.Y}}" font-family="sans-serif" font-size="11" fill="{{$.TrackNumColor}}">{{.Number}}</text>
   <text x="220" y="{{.Y}}" font-family="sans-serif" font-size="12" fill="{{$.TrackNameColor}}">{{.Name}}</text>
+  {{if .Duration}}<text x="584" y="{{.Y}}" text-anchor="end" font-family="sans-serif" font-size="11" fill="{{$.TrackNumColor}}">{{.Duration}}</text>{{end}}
   <line x1="200" y1="{{.LineY}}" x2="584" y2="{{.LineY}}" stroke="{{$.DividerColor}}" stroke-width="0.5"/>
   {{end -}}
   {{if .RemainingCount -}}
@@ -341,6 +368,7 @@ func handleAlbum(w http.ResponseWriter, r *http.Request) {
 	if !validCountry(country) {
 		country = "us"
 	}
+	showSuffix := q.Get("suffix") != "0"
 
 	if id == "" {
 		http.Error(w, "missing id", http.StatusBadRequest)
@@ -436,10 +464,11 @@ func handleAlbum(w http.ResponseWriter, r *http.Request) {
 	for i, t := range display {
 		y := startY + i*lineSpacing
 		rows = append(rows, TrackRow{
-			Number: t.TrackNumber,
-			Name:   html.EscapeString(truncateByPixels(t.TrackName, 364, 12)),
-			Y:      y,
-			LineY:  y + 6,
+			Number:   t.TrackNumber,
+			Name:     html.EscapeString(truncateByPixels(t.TrackName, 300, 12)),
+			Duration: formatTrackDuration(t.TrackTimeMillis),
+			Y:        y,
+			LineY:    y + 6,
 		})
 	}
 	remaining := len(tracks) - len(display)
@@ -453,6 +482,9 @@ func handleAlbum(w http.ResponseWriter, r *http.Request) {
 		} else {
 			log.Printf("fetchAppleMusicPageTitle(%s, %s): %v", id, country, err)
 		}
+	}
+	if !showSuffix {
+		albumName = stripAlbumTypeSuffix(albumName)
 	}
 
 	// Compute SVG height: with badge always 280; without badge, fit to content.

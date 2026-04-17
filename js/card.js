@@ -17,9 +17,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const badgeToggle    = document.getElementById('badgeToggle');
     const badgeToggleThumb = document.getElementById('badgeToggleThumb');
     const badgeLabel     = document.getElementById('badgeLabel');
+    const suffixToggle   = document.getElementById('suffixToggle');
+    const suffixToggleThumb = document.getElementById('suffixToggleThumb');
+    const suffixLabel    = document.getElementById('suffixLabel');
 
     let cardTheme = 'dark';
     let showBadge = localStorage.getItem('showBadge') !== 'false';
+    let showSuffix = localStorage.getItem('showSuffix') !== 'false';
     let mode = 'track'; // 'track' | 'album'
     let albumCollectionId = null;
     let albumCountry = 'us';
@@ -91,7 +95,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function albumAPIParams(theme) {
-        return `id=${albumCollectionId}&theme=${theme}&badge=${showBadge ? '1' : '0'}&country=${albumCountry}`;
+        return `id=${albumCollectionId}&theme=${theme}&badge=${showBadge ? '1' : '0'}&country=${albumCountry}&suffix=${showSuffix ? '1' : '0'}`;
     }
 
     function updateAlbumPreview() {
@@ -319,6 +323,23 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     applyBadgeToggleUI();
+
+    // Suffix toggle (album only)
+    function applySuffixToggleUI() {
+        suffixToggle.setAttribute('aria-checked', String(showSuffix));
+        suffixToggleThumb.style.transform = showSuffix ? 'translateX(1.375rem)' : 'translateX(0.125rem)';
+        suffixToggle.style.backgroundColor = showSuffix ? '#f43f5e' : '#4b5563';
+        suffixLabel.textContent = showSuffix ? '表示' : '非表示';
+    }
+
+    suffixToggle.addEventListener('click', () => {
+        showSuffix = !showSuffix;
+        localStorage.setItem('showSuffix', String(showSuffix));
+        applySuffixToggleUI();
+        updateAlbumPreview();
+    });
+
+    applySuffixToggleUI();
 
     // Card theme toggle
     cardThemeToggle.addEventListener('click', () => {
