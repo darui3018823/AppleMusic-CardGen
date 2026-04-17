@@ -22,6 +22,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let showBadge = localStorage.getItem('showBadge') !== 'false';
     let mode = 'track'; // 'track' | 'album'
     let albumCollectionId = null;
+    let albumCountry = 'us';
     let albumOriginalURL = null;
 
     // ── Tab switching ────────────────────────────────────────────────────────
@@ -82,11 +83,15 @@ document.addEventListener('DOMContentLoaded', () => {
         let u;
         try { u = new URL(urlStr); } catch { return null; }
         if (u.hostname !== 'music.apple.com') return null;
-        const match = u.pathname.match(/\/album\/[^/]+\/(\d+)/);
+        const match = u.pathname.match(/\/([a-z]{2})\/album\/[^/]+\/(\d+)/);
         if (!match) return null;
         // album-only URL must NOT have ?i= (that's a track)
         if (u.searchParams.get('i')) return null;
-        return match[1];
+        return { country: match[1], id: match[2] };
+    }
+
+    function albumAPIParams(theme) {
+        return `id=${albumCollectionId}&theme=${theme}&badge=${showBadge ? '1' : '0'}&country=${albumCountry}`;
     }
 
     function updateAlbumPreview() {
@@ -101,16 +106,15 @@ document.addEventListener('DOMContentLoaded', () => {
         emptyState.classList.add('hidden');
         markdownSection.classList.remove('hidden');
 
-        const badgeParam = `&badge=${showBadge ? '1' : '0'}`;
-        previewDark.src  = `/api/album?id=${albumCollectionId}&theme=dark${badgeParam}`;
-        previewLight.src = `/api/album?id=${albumCollectionId}&theme=light${badgeParam}`;
+        previewDark.src  = `/api/album?${albumAPIParams('dark')}`;
+        previewLight.src = `/api/album?${albumAPIParams('light')}`;
 
         updateAlbumMarkdown();
     }
 
     function updateAlbumMarkdown() {
         if (!albumCollectionId) return;
-        const cardURL = `${window.location.origin}/api/album?id=${albumCollectionId}&theme=${cardTheme}&badge=${showBadge ? '1' : '0'}`;
+        const cardURL = `${window.location.origin}/api/album?${albumAPIParams(cardTheme)}`;
         markdownOutput.textContent = albumOriginalURL
             ? `[![Album](${cardURL})](${albumOriginalURL})`
             : `![Album](${cardURL})`;
@@ -121,21 +125,24 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!val) {
             albumLookupStatus.classList.add('hidden');
             albumCollectionId = null;
+            albumCountry = 'us';
             albumOriginalURL = null;
             updateAlbumPreview();
             return;
         }
-        const id = parseAlbumURL(val);
-        if (!id) {
+        const parsed = parseAlbumURL(val);
+        if (!parsed) {
             setAlbumStatus('アルバムURLが認識できません。例: https://music.apple.com/jp/album/alxd/1440785663', 'text-amber-500 dark:text-amber-400');
             albumCollectionId = null;
+            albumCountry = 'us';
             albumOriginalURL = null;
             updateAlbumPreview();
             return;
         }
-        albumCollectionId = id;
+        albumCollectionId = parsed.id;
+        albumCountry = parsed.country;
         albumOriginalURL = val;
-        setAlbumStatus(`ID: ${id} を検出しました`, 'text-green-600 dark:text-green-400');
+        setAlbumStatus(`ID: ${parsed.id} を検出しました`, 'text-green-600 dark:text-green-400');
         updateAlbumPreview();
     }, 500));
 

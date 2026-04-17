@@ -141,6 +141,7 @@ type AlbumCardData struct {
 	AccentColor    string
 	HintColor      string
 	ShowBadge      bool
+	SVGHeight      int
 }
 
 func truncate(s string, max int) string {
@@ -189,7 +190,7 @@ func truncateByPixels(s string, maxPx, fontSize float64) string {
 }
 
 const albumSvgTmplSrc = `<?xml version="1.0" encoding="UTF-8"?>
-<svg viewBox="0 0 600 280" width="600" height="280" xmlns="http://www.w3.org/2000/svg">
+<svg viewBox="0 0 600 {{.SVGHeight}}" width="600" height="{{.SVGHeight}}" xmlns="http://www.w3.org/2000/svg">
   <defs>
     <clipPath id="clip">
       <rect x="16" y="16" width="150" height="150" rx="12"/>
@@ -252,10 +253,94 @@ const albumSvgTmplSrc = `<?xml version="1.0" encoding="UTF-8"?>
 
 var albumTmpl = template.Must(template.New("album").Parse(albumSvgTmplSrc))
 
+func validCountry(s string) bool {
+	if len(s) != 2 {
+		return false
+	}
+	for _, c := range s {
+		if c < 'a' || c > 'z' {
+			return false
+		}
+	}
+	return true
+}
+
+var albumTitleCache sync.Map
+
+func fetchAppleMusicPageTitle(id, country string) (string, error) {
+	cacheKey := country + ":" + id
+	if cached, ok := albumTitleCache.Load(cacheKey); ok {
+		return cached.(string), nil
+	}
+
+	pageURL := fmt.Sprintf("https://music.apple.com/%s/album/%s", country, id)
+	client := &http.Client{Timeout: 6 * time.Second}
+	req, err := http.NewRequest("GET", pageURL, nil)
+	if err != nil {
+		return "", err
+	}
+	req.Header.Set("User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15")
+	req.Header.Set("Accept-Language", "ja,en-US;q=0.9,en;q=0.8")
+	resp, err := client.Do(req)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+	bodyBytes, err := io.ReadAll(io.LimitReader(resp.Body, 512*1024))
+	if err != nil {
+		return "", err
+	}
+	bodyStr := string(bodyBytes)
+
+	// Try JSON-LD: "@type":"MusicAlbum" then "name":"..."
+	const jldType = `"@type":"MusicAlbum"`
+	if idx := strings.Index(bodyStr, jldType); idx >= 0 {
+		snippet := bodyStr[idx:]
+		if len(snippet) > 1000 {
+			snippet = snippet[:1000]
+		}
+		const nameKey = `"name":"`
+		if ni := strings.Index(snippet, nameKey); ni >= 0 {
+			rest := snippet[ni+len(nameKey):]
+			if end := strings.Index(rest, `"`); end > 0 {
+				title := html.UnescapeString(rest[:end])
+				albumTitleCache.Store(cacheKey, title)
+				return title, nil
+			}
+		}
+	}
+
+	// Fall back: og:title minus " - Apple Music" suffix
+	const ogProp = `property="og:title"`
+	const contentAttr = `content="`
+	if idx := strings.Index(bodyStr, ogProp); idx >= 0 {
+		rest := bodyStr[idx:]
+		if ci := strings.Index(rest, contentAttr); ci >= 0 && ci < 300 {
+			valueStr := rest[ci+len(contentAttr):]
+			if end := strings.Index(valueStr, `"`); end > 0 {
+				title := html.UnescapeString(valueStr[:end])
+				title = strings.TrimSuffix(title, " - Apple Music")
+				// og:title is "Album - Artist - Apple Music"; take first segment
+				if parts := strings.SplitN(title, " - ", 2); len(parts[0]) > 0 {
+					title = parts[0]
+				}
+				albumTitleCache.Store(cacheKey, title)
+				return title, nil
+			}
+		}
+	}
+
+	return "", fmt.Errorf("title not found")
+}
+
 func handleAlbum(w http.ResponseWriter, r *http.Request) {
 	q := r.URL.Query()
 	id := q.Get("id")
 	theme := q.Get("theme")
+	country := q.Get("country")
+	if !validCountry(country) {
+		country = "us"
+	}
 
 	if id == "" {
 		http.Error(w, "missing id", http.StatusBadRequest)
@@ -272,7 +357,7 @@ func handleAlbum(w http.ResponseWriter, r *http.Request) {
 	}
 
 	client := &http.Client{Timeout: 8 * time.Second}
-	apiURL := fmt.Sprintf("https://itunes.apple.com/lookup?id=%s&entity=song&country=jp", id)
+	apiURL := fmt.Sprintf("https://itunes.apple.com/lookup?id=%s&entity=song&country=%s", id, country)
 	resp, err := client.Get(apiURL)
 	if err != nil {
 		http.Error(w, "iTunes API request failed", http.StatusBadGateway)
@@ -359,14 +444,41 @@ func handleAlbum(w http.ResponseWriter, r *http.Request) {
 	}
 	remaining := len(tracks) - len(display)
 
+	showBadge := q.Get("badge") != "0"
+
+	albumName := album.CollectionName
+	if country != "us" {
+		if pageTitle, err := fetchAppleMusicPageTitle(id, country); err == nil && pageTitle != "" {
+			albumName = pageTitle
+		} else {
+			log.Printf("fetchAppleMusicPageTitle(%s, %s): %v", id, country, err)
+		}
+	}
+
+	// Compute SVG height: with badge always 280; without badge, fit to content.
+	svgHeight := 280
+	if !showBadge {
+		svgHeight = 229 // min: artwork/meta area bottom
+		if len(rows) > 0 {
+			last := rows[len(rows)-1]
+			if last.LineY+16 > svgHeight {
+				svgHeight = last.LineY + 16
+			}
+		}
+		if remaining > 0 && 264 > svgHeight {
+			svgHeight = 264 // remaining count at y=248 + 16px padding
+		}
+	}
+
 	data := AlbumCardData{
-		AlbumName:  html.EscapeString(truncateByPixels(album.CollectionName, 168, 13)),
+		AlbumName:  html.EscapeString(truncateByPixels(albumName, 168, 13)),
 		ArtistName: html.EscapeString(truncateByPixels(album.ArtistName, 168, 11)),
 		Meta:           html.EscapeString(meta),
 		ArtworkBase64:  artworkB64,
 		Tracks:         rows,
 		RemainingCount: remaining,
-		ShowBadge:      q.Get("badge") != "0",
+		ShowBadge:      showBadge,
+		SVGHeight:      svgHeight,
 	}
 
 	if theme == "dark" {
