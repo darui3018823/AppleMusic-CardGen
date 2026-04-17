@@ -14,8 +14,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const toggleThumb    = document.getElementById('toggleThumb');
     const themeLabel     = document.getElementById('themeLabel');
     const pageDarkToggle = document.getElementById('pageDarkToggle');
+    const badgeToggle    = document.getElementById('badgeToggle');
+    const badgeToggleThumb = document.getElementById('badgeToggleThumb');
+    const badgeLabel     = document.getElementById('badgeLabel');
 
     let cardTheme = 'dark';
+    let showBadge = localStorage.getItem('showBadge') !== 'false';
     let mode = 'track'; // 'track' | 'album'
     let albumCollectionId = null;
     let albumOriginalURL = null;
@@ -97,15 +101,16 @@ document.addEventListener('DOMContentLoaded', () => {
         emptyState.classList.add('hidden');
         markdownSection.classList.remove('hidden');
 
-        previewDark.src  = `/api/album?id=${albumCollectionId}&theme=dark`;
-        previewLight.src = `/api/album?id=${albumCollectionId}&theme=light`;
+        const badgeParam = `&badge=${showBadge ? '1' : '0'}`;
+        previewDark.src  = `/api/album?id=${albumCollectionId}&theme=dark${badgeParam}`;
+        previewLight.src = `/api/album?id=${albumCollectionId}&theme=light${badgeParam}`;
 
         updateAlbumMarkdown();
     }
 
     function updateAlbumMarkdown() {
         if (!albumCollectionId) return;
-        const cardURL = `${window.location.origin}/api/album?id=${albumCollectionId}&theme=${cardTheme}`;
+        const cardURL = `${window.location.origin}/api/album?id=${albumCollectionId}&theme=${cardTheme}&badge=${showBadge ? '1' : '0'}`;
         markdownOutput.textContent = albumOriginalURL
             ? `[![Album](${cardURL})](${albumOriginalURL})`
             : `![Album](${cardURL})`;
@@ -144,6 +149,7 @@ document.addEventListener('DOMContentLoaded', () => {
             year:    document.getElementById('year').value,
             dur:     document.getElementById('dur').value,
             theme,
+            badge:   showBadge ? '1' : '0',
         }).toString();
     }
 
@@ -288,6 +294,24 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         lookupAndFill(val);
     }, 500));
+
+    // Badge toggle
+    function applyBadgeToggleUI() {
+        badgeToggle.setAttribute('aria-checked', String(showBadge));
+        badgeToggleThumb.style.transform = showBadge ? 'translateX(1.375rem)' : 'translateX(0.125rem)';
+        badgeToggle.style.backgroundColor = showBadge ? '#f43f5e' : '#4b5563';
+        badgeLabel.textContent = showBadge ? '表示' : '非表示';
+    }
+
+    badgeToggle.addEventListener('click', () => {
+        showBadge = !showBadge;
+        localStorage.setItem('showBadge', String(showBadge));
+        applyBadgeToggleUI();
+        if (mode === 'album') updateAlbumPreview();
+        else updatePreview();
+    });
+
+    applyBadgeToggleUI();
 
     // Card theme toggle
     cardThemeToggle.addEventListener('click', () => {
