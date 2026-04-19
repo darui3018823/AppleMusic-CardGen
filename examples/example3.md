@@ -1,10 +1,10 @@
 <table>
     <tr>
         <td colspan="2" Align="center">
-            <img src="https://amcg.daruks.com/api/album?id=1440785663&theme=dark" alt="ALXD">
+            <img src="https://amcg.daruks.com/api/album?id=1564649242&theme=dark&badge=0&country=jp&suffix=1" alt="ALXD">
         </td>
         <td>
-            <img src="https://amcg.daruks.com/api/album?id=1440785663&theme=light" alt="ALXD">
+            <img src="https://amcg.daruks.com/api/album?id=1564649242&theme=light&badge=0&country=jp&suffix=1" alt="ALXD">
         </td>
     </tr>
     <tr>
