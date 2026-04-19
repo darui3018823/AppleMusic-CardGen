@@ -319,7 +319,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Badge toggle
     function applyBadgeToggleUI() {
         badgeToggle.setAttribute('aria-checked', String(showBadge));
-        badgeToggleThumb.style.transform = showBadge ? 'translateX(1.375rem)' : 'translateX(0.125rem)';
+        badgeToggleThumb.style.transform = showBadge ? 'translateX(1.25rem)' : 'translateX(0.25rem)';
         badgeToggle.style.backgroundColor = showBadge ? '#f43f5e' : '#4b5563';
         badgeLabel.textContent = showBadge ? '表示' : '非表示';
     }
@@ -337,7 +337,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Suffix toggle (album only)
     function applySuffixToggleUI() {
         suffixToggle.setAttribute('aria-checked', String(showSuffix));
-        suffixToggleThumb.style.transform = showSuffix ? 'translateX(1.375rem)' : 'translateX(0.125rem)';
+        suffixToggleThumb.style.transform = showSuffix ? 'translateX(1.25rem)' : 'translateX(0.25rem)';
         suffixToggle.style.backgroundColor = showSuffix ? '#f43f5e' : '#4b5563';
         suffixLabel.textContent = showSuffix ? '表示' : '非表示';
     }
@@ -351,15 +351,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
     applySuffixToggleUI();
 
-    // Card theme toggle
+    // Card theme toggle — initialize
+    toggleThumb.style.transform = 'translateX(1.25rem)';
+    cardThemeToggle.style.backgroundColor = '#f43f5e';
+    cardThemeToggle.setAttribute('aria-checked', 'true');
+
     cardThemeToggle.addEventListener('click', () => {
         cardTheme = cardTheme === 'dark' ? 'light' : 'dark';
-        const isLight = cardTheme === 'light';
+        const isDark = cardTheme === 'dark';
 
-        cardThemeToggle.setAttribute('aria-checked', String(isLight));
-        toggleThumb.style.transform = isLight ? 'translateX(1.25rem)' : 'translateX(0.125rem)';
-        cardThemeToggle.style.backgroundColor = isLight ? '#fb7185' : '#4b5563';
-        themeLabel.textContent = isLight ? 'Light' : 'Dark';
+        cardThemeToggle.setAttribute('aria-checked', String(isDark));
+        toggleThumb.style.transform = isDark ? 'translateX(1.25rem)' : 'translateX(0.25rem)';
+        cardThemeToggle.style.backgroundColor = isDark ? '#f43f5e' : '#4b5563';
+        themeLabel.textContent = isDark ? 'Dark' : 'Light';
 
         if (mode === 'album') updateAlbumMarkdown();
         else updateMarkdown();
