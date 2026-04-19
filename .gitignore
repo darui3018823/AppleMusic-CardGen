@@ -21,7 +21,6 @@ profile.cov
 # Dependency directories (remove the comment below to include it)
 # vendor/
 node_modules/
-pnpm-lock.yaml
 
 # Go workspace file
 go.work
