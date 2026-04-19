@@ -105,8 +105,8 @@ type iTunesResult struct {
 	ArtworkUrl100     string `json:"artworkUrl100"`
 	ReleaseDate       string `json:"releaseDate"`
 	TrackCount        int    `json:"trackCount"`
-	CollectionViewUrl  string `json:"collectionViewUrl"`
-	PrimaryGenreName   string `json:"primaryGenreName"`
+	CollectionViewUrl string `json:"collectionViewUrl"`
+	PrimaryGenreName  string `json:"primaryGenreName"`
 	TrackNumber       int    `json:"trackNumber"`
 	TrackName         string `json:"trackName"`
 	TrackTimeMillis   int    `json:"trackTimeMillis"`
@@ -503,8 +503,8 @@ func handleAlbum(w http.ResponseWriter, r *http.Request) {
 	}
 
 	data := AlbumCardData{
-		AlbumName:  html.EscapeString(truncateByPixels(albumName, 168, 13)),
-		ArtistName: html.EscapeString(truncateByPixels(album.ArtistName, 168, 11)),
+		AlbumName:      html.EscapeString(truncateByPixels(albumName, 168, 13)),
+		ArtistName:     html.EscapeString(truncateByPixels(album.ArtistName, 168, 11)),
 		Meta:           html.EscapeString(meta),
 		ArtworkBase64:  artworkB64,
 		Tracks:         rows,
@@ -692,6 +692,7 @@ func main() {
 	mux.HandleFunc("/api/lookup", handleLookup)
 	mux.HandleFunc("/api/card", handleCard)
 	mux.HandleFunc("/api/album", handleAlbum)
+
 	mux.HandleFunc("/script.js", func(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/js/script.js", http.StatusMovedPermanently)
 	})

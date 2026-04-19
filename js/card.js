@@ -87,11 +87,21 @@ document.addEventListener('DOMContentLoaded', () => {
         let u;
         try { u = new URL(urlStr); } catch { return null; }
         if (u.hostname !== 'music.apple.com') return null;
-        const match = u.pathname.match(/\/([a-z]{2})\/album\/[^/]+\/(\d+)/);
-        if (!match) return null;
-        // album-only URL must NOT have ?i= (that's a track)
         if (u.searchParams.get('i')) return null;
-        return { country: match[1], id: match[2] };
+        const parts = u.pathname.split('/').filter(Boolean);
+        let country, albumIndex;
+        if (parts[0] === 'album') {
+            country = 'us';
+            albumIndex = 0;
+        } else if (parts[1] === 'album') {
+            country = parts[0];
+            albumIndex = 1;
+        } else {
+            return null;
+        }
+        const id = parts[albumIndex + 2];
+        if (!id || !/^\d+$/.test(id)) return null;
+        return { country, id };
     }
 
     function albumAPIParams(theme) {
