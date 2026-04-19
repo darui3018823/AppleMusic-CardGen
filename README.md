@@ -13,10 +13,10 @@ Generate SVG card images from Apple Music tracks and albums — embed them in Ma
   </tr>
   <tr>
     <td colspan="2" align="center">
-      <img src="https://amcg.daruks.com/api/album?id=1440785663&theme=dark" alt="ALXD">
+      <img src="https://amcg.daruks.com/api/album?id=1655059835&theme=dark" alt="Counterfeit">
     </td>
     <td>
-      <img src="https://amcg.daruks.com/api/album?id=1440785663&theme=light" alt="ALXD">
+      <img src="https://amcg.daruks.com/api/album?id=1655059835&theme=light" alt="Counterfeit">
     </td>
   </tr>
 </table>
