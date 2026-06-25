@@ -126,11 +126,21 @@ document.addEventListener('DOMContentLoaded', () => {
         updateAlbumMarkdown();
     }
 
+    // Wrap a music.apple.com link in our /api/open redirector so it tries the
+    // itms:// app deep link first and falls back to the web. Non-Apple-Music
+    // links are returned unchanged.
+    function openURL(link) {
+        try {
+            if (new URL(link).hostname !== 'music.apple.com') return link;
+        } catch { return link; }
+        return `${window.location.origin}/api/open?url=${encodeURIComponent(link)}`;
+    }
+
     function updateAlbumMarkdown() {
         if (!albumCollectionId) return;
         const cardURL = `${window.location.origin}/api/album?${albumAPIParams(cardTheme)}`;
         markdownOutput.textContent = albumOriginalURL
-            ? `[![Album](${cardURL})](${albumOriginalURL})`
+            ? `[![Album](${cardURL})](${openURL(albumOriginalURL)})`
             : `![Album](${cardURL})`;
     }
 
@@ -217,7 +227,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const cardURL = `${window.location.origin}/api/card?${buildParams(cardTheme)}`;
 
         markdownOutput.textContent = link
-            ? `[![${title}](${cardURL})](${link})`
+            ? `[![${title}](${cardURL})](${openURL(link)})`
             : `![${title}](${cardURL})`;
     }
 

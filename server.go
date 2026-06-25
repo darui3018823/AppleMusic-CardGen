@@ -623,6 +623,94 @@ func handleLookup(w http.ResponseWriter, r *http.Request) {
 	w.Write(body)
 }
 
+// ── Apple Music opener ────────────────────────────────────────────────────────
+
+type openPageData struct {
+	WebURLAttr  string // HTML-escaped, for the fallback <a href>
+	WebURLJSON  string // JSON-encoded string literal, for <script>
+	DeepURLJSON string // JSON-encoded string literal, for <script>
+}
+
+// Dark background avoids a white flash before redirecting. The page tries the
+// itms:// deep link first; if the app does not take over (page stays visible),
+// it falls back to the music.apple.com web URL after a short delay.
+const openPageTmplSrc = `<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark">
+<title>Apple Music を開いています…</title>
+<style>
+  html,body{margin:0;height:100%;background:#1c1c1e;color:#8e8e93;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;display:flex;align-items:center;justify-content:center;-webkit-text-size-adjust:100%;}
+  .box{text-align:center;padding:24px;font-size:14px;line-height:1.7}
+  a{color:#d6003b;text-decoration:none}
+</style>
+</head>
+<body>
+<div class="box">
+<p>Apple Music を開いています…</p>
+<p><a id="fb" href="{{.WebURLAttr}}">開かないときはこちら</a></p>
+</div>
+<script>
+(function(){
+  var deep={{.DeepURLJSON}},web={{.WebURLJSON}},done=false;
+  function hidden(){return document.hidden||document.visibilityState==="hidden";}
+  document.addEventListener("visibilitychange",function(){if(hidden())done=true;});
+  window.addEventListener("pagehide",function(){done=true;});
+  setTimeout(function(){try{location.href=deep;}catch(e){}},30);
+  setTimeout(function(){if(!done&&!hidden())location.replace(web);},1400);
+})();
+</script>
+</body>
+</html>`
+
+var openTmpl = template.Must(template.New("open").Parse(openPageTmplSrc))
+
+func isIOS(ua string) bool {
+	return strings.Contains(ua, "iPhone") || strings.Contains(ua, "iPad") || strings.Contains(ua, "iPod")
+}
+
+func handleOpen(w http.ResponseWriter, r *http.Request) {
+	raw := r.URL.Query().Get("url")
+	if raw == "" {
+		http.Error(w, "missing url", http.StatusBadRequest)
+		return
+	}
+	u, err := url.Parse(raw)
+	if err != nil || u.Scheme != "https" || u.Hostname() != "music.apple.com" {
+		http.Error(w, "invalid url: must be an https music.apple.com link", http.StatusBadRequest)
+		return
+	}
+	webURL := u.String()
+	// itms:// opens Apple Music for Windows / macOS; same path, custom scheme.
+	deepURL := "itms" + strings.TrimPrefix(webURL, "https")
+
+	// iOS and Android open the app (or web) via the music.apple.com URL itself;
+	// no JS interstitial needed. Note: iPadOS 13+ reports a desktop UA and falls
+	// through to the interstitial, where itms:// is attempted first.
+	ua := r.UserAgent()
+	if isIOS(ua) || strings.Contains(ua, "Android") {
+		http.Redirect(w, r, webURL, http.StatusFound)
+		return
+	}
+
+	webJSON, _ := json.Marshal(webURL)
+	deepJSON, _ := json.Marshal(deepURL)
+	data := openPageData{
+		WebURLAttr:  html.EscapeString(webURL),
+		WebURLJSON:  string(webJSON),
+		DeepURLJSON: string(deepJSON),
+	}
+
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	w.Header().Set("Cache-Control", "no-store")
+	w.Header().Set("Referrer-Policy", "no-referrer")
+	if err := openTmpl.Execute(w, data); err != nil {
+		log.Printf("open template error: %v", err)
+	}
+}
+
 func handleCard(w http.ResponseWriter, r *http.Request) {
 	q := r.URL.Query()
 	title := q.Get("title")
@@ -692,6 +780,7 @@ func main() {
 	mux.HandleFunc("/api/lookup", handleLookup)
 	mux.HandleFunc("/api/card", handleCard)
 	mux.HandleFunc("/api/album", handleAlbum)
+	mux.HandleFunc("/api/open", handleOpen)
 
 	mux.HandleFunc("/script.js", func(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/js/script.js", http.StatusMovedPermanently)
