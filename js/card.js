@@ -10,6 +10,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const markdownSection = document.getElementById('markdownSection');
     const markdownOutput = document.getElementById('markdownOutput');
     const copyBtn        = document.getElementById('copyBtn');
+    const fmtMarkdownBtn = document.getElementById('fmtMarkdown');
+    const fmtHtmlBtn     = document.getElementById('fmtHtml');
     const cardThemeToggle = document.getElementById('cardThemeToggle');
     const toggleThumb    = document.getElementById('toggleThumb');
     const themeLabel     = document.getElementById('themeLabel');
@@ -22,6 +24,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const suffixLabel    = document.getElementById('suffixLabel');
 
     let cardTheme = 'dark';
+    let outputFormat = localStorage.getItem('outputFormat') === 'html' ? 'html' : 'markdown';
     let showBadge = localStorage.getItem('showBadge') !== 'false';
     let showSuffix = localStorage.getItem('showSuffix') !== 'false';
     let mode = 'track'; // 'track' | 'album'
@@ -136,12 +139,29 @@ document.addEventListener('DOMContentLoaded', () => {
         return `${window.location.origin}/api/open?url=${encodeURIComponent(link)}`;
     }
 
+    function escAttr(s) {
+        return String(s)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;');
+    }
+
+    // Build the embed snippet (Markdown or HTML <a><img></a>) for the active
+    // output format. link may be empty → image-only snippet.
+    function formatEmbed(cardURL, link, alt) {
+        const href = link ? openURL(link) : '';
+        if (outputFormat === 'html') {
+            const img = `<img src="${escAttr(cardURL)}" alt="${escAttr(alt)}">`;
+            return href ? `<a href="${escAttr(href)}">${img}</a>` : img;
+        }
+        return href ? `[![${alt}](${cardURL})](${href})` : `![${alt}](${cardURL})`;
+    }
+
     function updateAlbumMarkdown() {
         if (!albumCollectionId) return;
         const cardURL = `${window.location.origin}/api/album?${albumAPIParams(cardTheme)}`;
-        markdownOutput.textContent = albumOriginalURL
-            ? `[![Album](${cardURL})](${openURL(albumOriginalURL)})`
-            : `![Album](${cardURL})`;
+        markdownOutput.textContent = formatEmbed(cardURL, albumOriginalURL, 'Album');
     }
 
     albumMusicURLInput.addEventListener('input', debounce(e => {
@@ -226,9 +246,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const link    = document.getElementById('link').value.trim();
         const cardURL = `${window.location.origin}/api/card?${buildParams(cardTheme)}`;
 
-        markdownOutput.textContent = link
-            ? `[![${title}](${cardURL})](${openURL(link)})`
-            : `![${title}](${cardURL})`;
+        markdownOutput.textContent = formatEmbed(cardURL, link, title);
     }
 
     function debounce(fn, ms) {
@@ -378,6 +396,40 @@ document.addEventListener('DOMContentLoaded', () => {
         if (mode === 'album') updateAlbumMarkdown();
         else updateMarkdown();
     });
+
+    // Output format toggle (Markdown / HTML)
+    function setSegActive(btn, active) {
+        btn.classList.toggle('bg-white', active);
+        btn.classList.toggle('dark:bg-gray-600', active);
+        btn.classList.toggle('shadow-sm', active);
+        btn.classList.toggle('text-gray-800', active);
+        btn.classList.toggle('dark:text-gray-100', active);
+        btn.classList.toggle('text-gray-500', !active);
+        btn.classList.toggle('dark:text-gray-400', !active);
+    }
+
+    function applyFormatUI() {
+        const md = outputFormat === 'markdown';
+        setSegActive(fmtMarkdownBtn, md);
+        setSegActive(fmtHtmlBtn, !md);
+    }
+
+    function renderOutput() {
+        if (mode === 'album') updateAlbumMarkdown();
+        else updateMarkdown();
+    }
+
+    function setFormat(fmt) {
+        if (outputFormat === fmt) return;
+        outputFormat = fmt;
+        localStorage.setItem('outputFormat', fmt);
+        applyFormatUI();
+        renderOutput();
+    }
+
+    fmtMarkdownBtn.addEventListener('click', () => setFormat('markdown'));
+    fmtHtmlBtn.addEventListener('click', () => setFormat('html'));
+    applyFormatUI();
 
     // Copy button
     copyBtn.addEventListener('click', () => {

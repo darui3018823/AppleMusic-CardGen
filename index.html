@@ -265,9 +265,12 @@
                     <!-- Markdown output -->
                     <div id="markdownSection" class="hidden space-y-2">
                         <div class="flex items-center justify-between">
-                            <h3 class="text-xs font-semibold tracking-wider text-gray-500 dark:text-gray-400">
-                                Markdown
-                            </h3>
+                            <div class="inline-flex rounded-lg bg-gray-100 dark:bg-gray-700/50 p-0.5 text-xs font-semibold">
+                                <button id="fmtMarkdown" type="button"
+                                    class="px-2.5 py-1 rounded-md transition-colors">Markdown</button>
+                                <button id="fmtHtml" type="button"
+                                    class="px-2.5 py-1 rounded-md transition-colors">HTML</button>
+                            </div>
                             <button id="copyBtn"
                                 class="px-3 py-1.5 bg-gradient-to-r from-primary-500 to-rose-500 text-white text-xs font-semibold rounded-xl hover:opacity-90 active:scale-95 transition-all">
                                 Copy

@@ -3,5 +3,11 @@
 /* Packages and other third-party materials used in this repository are subject to their respective licenses and copyrights. */
 
 body {
-    font-family: 'Helvetica Neue', Arial, 'Hiragino Kaku Gothic ProN', 'Hiragino Sans', Meiryo, sans-serif;
+    /* Base UI font stack with per-platform fallbacks. */
+    font-family:
+        'SF Pro Text', 'SF Pro Display', 'SF Pro',
+        -apple-system, BlinkMacSystemFont,
+        'Hiragino Sans', 'Hiragino Kaku Gothic ProN',
+        system-ui, 'Segoe UI', 'Yu Gothic UI', Meiryo, Roboto,
+        sans-serif;
 }
