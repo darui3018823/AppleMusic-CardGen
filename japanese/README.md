@@ -40,6 +40,9 @@ Markdown や HTML に埋め込むことで、README やプロフィールペー�
 
 ## API
 
+> `badge` / `country` / `suffix`、`/api/lookup` プロキシ、`/api/open` アプリ起動
+> リダイレクトを含む完全版: **[docs/API.ja.md](../docs/API.ja.md)**
+
 ### Track カード
 
 ```

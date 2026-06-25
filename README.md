@@ -39,6 +39,9 @@ Generate SVG card images from Apple Music tracks and albums — embed them in Ma
 
 ## API
 
+> Full reference, including `badge` / `country` / `suffix`, the `/api/lookup`
+> proxy, and the `/api/open` app-launch redirect: **[docs/API.md](./docs/API.md)**.
+
 ### Track card
 
 ```
