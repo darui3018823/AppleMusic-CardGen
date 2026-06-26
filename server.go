@@ -143,8 +143,8 @@ func stripAlbumTypeSuffix(name string) string {
 	for _, suffix := range []string{
 		" - Single", " - EP", " - Maxi Single", " - Original Soundtrack",
 	} {
-		if strings.HasSuffix(name, suffix) {
-			return strings.TrimSuffix(name, suffix)
+		if after, ok := strings.CutSuffix(name, suffix); ok {
+			return after
 		}
 	}
 	return name
@@ -327,8 +327,7 @@ func fetchAppleMusicPageTitle(id, country string) (string, error) {
 			snippet = snippet[:1000]
 		}
 		const nameKey = `"name":"`
-		if ni := strings.Index(snippet, nameKey); ni >= 0 {
-			rest := snippet[ni+len(nameKey):]
+		if _, rest, ok := strings.Cut(snippet, nameKey); ok {
 			if end := strings.Index(rest, `"`); end > 0 {
 				title := html.UnescapeString(rest[:end])
 				albumTitleCache.Store(cacheKey, title)
