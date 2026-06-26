@@ -131,11 +131,27 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Wrap a music.apple.com link in our /api/open redirector so it tries the
     // itms:// app deep link first and falls back to the web. Non-Apple-Music
-    // links are returned unchanged.
+    // links are returned unchanged. Numeric album/song links use the compact
+    // ?id=&s= form; anything else falls back to the full ?url= encoding.
     function openURL(link) {
+        let u;
         try {
-            if (new URL(link).hostname !== 'music.apple.com') return link;
+            u = new URL(link);
+            if (u.hostname !== 'music.apple.com') return link;
         } catch { return link; }
+
+        const parts = u.pathname.split('/').filter(Boolean);
+        const ki = parts.findIndex(p => p === 'album' || p === 'song' || p === 'music-video');
+        const storefront = ki >= 1 ? parts[ki - 1] : 'us';
+        const kind = ki >= 0 ? parts[ki] : '';
+        const id = ki >= 0 ? parts[parts.length - 1] : '';
+        if (/^[a-z]{2}$/.test(storefront) && /^\d+$/.test(id)) {
+            const p = new URLSearchParams({ id, s: storefront });
+            if (kind !== 'album') p.set('kind', kind);
+            const track = u.searchParams.get('i');
+            if (kind === 'album' && /^\d+$/.test(track || '')) p.set('i', track);
+            return `${window.location.origin}/api/open?${p.toString()}`;
+        }
         return `${window.location.origin}/api/open?url=${encodeURIComponent(link)}`;
     }
 

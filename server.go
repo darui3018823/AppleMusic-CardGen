@@ -671,18 +671,87 @@ func isIOS(ua string) bool {
 	return strings.Contains(ua, "iPhone") || strings.Contains(ua, "iPad") || strings.Contains(ua, "iPod")
 }
 
+// isDigits reports whether s is non-empty and contains only ASCII digits.
+func isDigits(s string) bool {
+	if s == "" {
+		return false
+	}
+	for _, c := range s {
+		if c < '0' || c > '9' {
+			return false
+		}
+	}
+	return true
+}
+
+// isStorefront reports whether s is a two-letter Apple Music storefront code.
+func isStorefront(s string) bool {
+	if len(s) != 2 {
+		return false
+	}
+	for _, c := range s {
+		if c < 'a' || c > 'z' {
+			return false
+		}
+	}
+	return true
+}
+
+// buildAppleMusicURL reconstructs a canonical music.apple.com link from the
+// compact /api/open params (id + storefront, with optional kind and track id).
+// Apple Music accepts the slug-less /{kind}/{id} form and redirects to the
+// full URL, so callers can omit the human-readable name segment.
+func buildAppleMusicURL(q url.Values) (string, bool) {
+	id := q.Get("id")
+	if !isDigits(id) {
+		return "", false
+	}
+	s := q.Get("s")
+	if s == "" {
+		s = q.Get("country")
+	}
+	if !isStorefront(s) {
+		return "", false
+	}
+	kind := q.Get("kind")
+	switch kind {
+	case "album", "song", "music-video":
+		// allowed
+	case "":
+		kind = "album"
+	default:
+		return "", false
+	}
+	// The slug segment is cosmetic, but the Apple Music desktop app's itms://
+	// handler parses the path locally and expects the canonical
+	// /{kind}/{slug}/{id} shape. Without a slug it mistakes the id for the name
+	// and fails ("unknown error"), even though the web redirects fine. Insert a
+	// placeholder so the deep link keeps the structure; Apple resolves by id.
+	webURL := "https://music.apple.com/" + s + "/" + kind + "/_/" + id
+	if track := q.Get("i"); kind == "album" && isDigits(track) {
+		webURL += "?i=" + track + "&uo=4"
+	} else {
+		webURL += "?uo=4"
+	}
+	return webURL, true
+}
+
 func handleOpen(w http.ResponseWriter, r *http.Request) {
-	raw := r.URL.Query().Get("url")
-	if raw == "" {
-		http.Error(w, "missing url", http.StatusBadRequest)
+	q := r.URL.Query()
+	var webURL string
+	if raw := q.Get("url"); raw != "" {
+		u, err := url.Parse(raw)
+		if err != nil || u.Scheme != "https" || u.Hostname() != "music.apple.com" {
+			http.Error(w, "invalid url: must be an https music.apple.com link", http.StatusBadRequest)
+			return
+		}
+		webURL = u.String()
+	} else if built, ok := buildAppleMusicURL(q); ok {
+		webURL = built
+	} else {
+		http.Error(w, "missing url: pass ?url= or the compact ?id=&s= form", http.StatusBadRequest)
 		return
 	}
-	u, err := url.Parse(raw)
-	if err != nil || u.Scheme != "https" || u.Hostname() != "music.apple.com" {
-		http.Error(w, "invalid url: must be an https music.apple.com link", http.StatusBadRequest)
-		return
-	}
-	webURL := u.String()
 	// itms:// opens Apple Music for Windows / macOS; same path, custom scheme.
 	deepURL := "itms" + strings.TrimPrefix(webURL, "https")
 

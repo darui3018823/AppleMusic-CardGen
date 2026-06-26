@@ -160,9 +160,19 @@ Open an Apple Music link in the native app when possible, falling back to the
 web. Use this as the **link target** for an embedded card so a click prefers the
 installed Apple Music app over the website.
 
+The target link can be supplied two ways:
+
+- **Full** — `url=` with a percent-encoded `music.apple.com` link.
+- **Compact** (recommended) — `id` + `s`, which the server reassembles into a
+  `/{kind}/_/{id}` link (a placeholder slug; Apple resolves by id and redirects
+  to the full URL). This avoids percent-encoding the whole link and is roughly
+  half the length. The placeholder keeps the path shape the desktop app's
+  `itms://` handler expects, so the app deep link still works.
+
 ### Flow
 
-1. The `url` must be an `https` link on `music.apple.com` (else `400`).
+1. The request must resolve to an `https` link on `music.apple.com` — either a
+   valid `url`, or a `id`/`s` pair (else `400`).
 2. **iOS / Android** — responds with `302 Found` straight to the
    `music.apple.com` URL (the OS handles the app via its universal/app link).
 3. **Other platforms (Windows / macOS / …)** — returns a small HTML page that:
@@ -173,23 +183,38 @@ installed Apple Music app over the website.
 
 ### Parameters
 
+Provide **either** `url`, **or** the compact `id` + `s` pair.
+
 | Parameter | Required | Description |
 |---|---|---|
-| `url` | ✅ | An `https://music.apple.com/…` URL (percent-encoded) |
+| `url` | ✅¹ | An `https://music.apple.com/…` URL (percent-encoded) |
+| `id` | ✅¹ | Numeric album / song / music-video id |
+| `s` | ✅¹ | Two-letter storefront, e.g. `jp`, `us` (alias: `country`) |
+| `kind` | — | `album` (default), `song`, or `music-video` |
+| `i` | — | Numeric track id within an album (becomes `?i=…`) |
+
+¹ Supply either `url`, or both `id` and `s`. `url` takes precedence if present.
 
 ### Response
 
 - `302 Found` (iOS / Android), or
 - `text/html; charset=utf-8` interstitial (`Cache-Control: no-store`) elsewhere.
 
-### Example
+### Examples
 
 ```
+# Compact (recommended)
+GET /api/open?id=1896397416&s=jp
+
+# Compact with a track id
+GET /api/open?id=1574378620&s=us&i=1574378625
+
+# Full URL (still supported)
 GET /api/open?url=https%3A%2F%2Fmusic.apple.com%2Falbum%2Fstay%2F1574378620%3Fi%3D1574378625
 ```
 
 The web UI wraps `music.apple.com` links in `/api/open` automatically when it
-generates the embed snippet.
+generates the embed snippet, emitting the compact form for numeric links.
 
 ---
 
