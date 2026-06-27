@@ -22,7 +22,7 @@ Apple Music Card Generator の HTTP API 完全リファレンス。
 
 | エンドポイント | `Cache-Control` |
 |---|---|
-| `/api/card`, `/api/album` | `public, max-age=3600` |
+| `/api/card`, `/api/album`, `/api/playlist` | `public, max-age=3600` |
 | `/api/lookup` | _(なし)_ |
 | `/api/open` | `no-store` |
 
@@ -39,8 +39,10 @@ Apple Music Card Generator の HTTP API 完全リファレンス。
 | `404 Not Found` | 対象のアルバム/楽曲が上流に存在しない |
 | `502 Bad Gateway` | 上流リクエスト（iTunes API / アートワーク）の失敗 |
 
-> 補足: `/api/card`・`/api/album` では、**アートワーク取得の失敗だけ**は致命的では
-> ありません。画像部分をプレースホルダにしてカードは `200` で描画されます。
+> 補足: `/api/card`・`/api/album`・`/api/playlist` では、**アートワーク取得の失敗だけ**
+> は致命的ではありません。画像部分をプレースホルダにしてカードは `200` で描画されます。
+> `/api/playlist` はプレイリストページのスクレイピング自体が失敗した場合も、プレースホルダ
+> カードに縮退します。
 
 ---
 
@@ -120,6 +122,53 @@ https://music.apple.com/jp/album/alxd/1440785663
 
 ```markdown
 [![ALXD](https://amcg.daruks.com/api/album?id=1440785663&theme=dark&country=jp)](https://amcg.daruks.com/api/open?url=https%3A%2F%2Fmusic.apple.com%2Fjp%2Falbum%2Falxd%2F1440785663)
+```
+
+---
+
+## `GET /api/playlist`
+
+**プレイリスト**カードを SVG（幅 600 px、高さは表示トラック数から自動計算）で描画します。
+アルバムと異なり、プレイリスト情報は iTunes API から取得できないため、プレイリストの
+`music.apple.com` ページ（埋め込みの `serialized-server-data` JSON）をスクレイピングします。
+結果はメモリにキャッシュされます。
+
+### パラメータ
+
+| パラメータ | 必須 | 既定 | 説明 |
+|---|---|---|---|
+| `id` | ✅¹ | — | プレイリスト id（例: `pl.d25f5d1181894928af76c85c967f8f31`） |
+| `url` | ✅¹ | — | `music.apple.com/…/playlist/…/{id}` の URL（`id` 省略時に id とストアフロントを導出） |
+| `country` | — | `us` | 小文字2文字のストアフロント（例: `jp`）。不正値は `us` にフォールバック |
+| `theme` | — | `dark` | `dark` または `light` |
+| `badge` | — | `1` | `0` で「Listen on Apple Music」バッジを非表示 |
+| `desc` | — | _(スクレイプ値)_ | 説明文を上書き。最大2行（`\n` で分割、なければ自動折り返し）。空値で説明を非表示 |
+| `format` | — | — | `json` で SVG の代わりにメタ情報（`name`, `curator`, `updated`, `trackCount`, `description`）を返す。Web UI が編集用の説明文を先読みするために使用 |
+
+¹ `id`、または導出元の `url` のいずれかを指定。`id` を優先。
+
+- 有効な `id`（`pl.*`）も解析可能な `url` も無い場合は `400`。
+- トラックは最大7曲まで表示し、超過分は「他N曲…」として要約します。
+- ページをスクレイピングできない場合はプレースホルダカードを `200` で描画し、エラーを
+  ログに記録します。
+
+### ID の見つけ方
+
+```
+https://music.apple.com/us/playlist/top-100-global/pl.d25f5d1181894928af76c85c967f8f31
+                                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                                                    これが id（pl. で始まる）
+```
+
+### レスポンス
+
+- `image/svg+xml; charset=utf-8`、または
+- `format=json` 指定時は `application/json; charset=utf-8`。
+
+### 例
+
+```markdown
+[![Playlist](https://amcg.daruks.com/api/playlist?id=pl.d25f5d1181894928af76c85c967f8f31&country=us&theme=dark)](https://amcg.daruks.com/api/open?url=https%3A%2F%2Fmusic.apple.com%2Fus%2Fplaylist%2Ftop-100-global%2Fpl.d25f5d1181894928af76c85c967f8f31)
 ```
 
 ---

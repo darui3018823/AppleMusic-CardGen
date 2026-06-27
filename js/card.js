@@ -27,54 +27,68 @@ document.addEventListener('DOMContentLoaded', () => {
     let outputFormat = localStorage.getItem('outputFormat') === 'html' ? 'html' : 'markdown';
     let showBadge = localStorage.getItem('showBadge') !== 'false';
     let showSuffix = localStorage.getItem('showSuffix') !== 'false';
-    let mode = 'track'; // 'track' | 'album'
+    let mode = 'track'; // 'track' | 'album' | 'playlist'
     let albumCollectionId = null;
     let albumCountry = 'us';
     let albumOriginalURL = null;
+    let playlistId = null;
+    let playlistCountry = 'us';
+    let playlistOriginalURL = null;
 
     // ── Tab switching ────────────────────────────────────────────────────────
-    const tabTrack   = document.getElementById('tabTrack');
-    const tabAlbum   = document.getElementById('tabAlbum');
-    const trackSection = document.getElementById('trackSection');
-    const albumSection = document.getElementById('albumSection');
+    const tabTrack    = document.getElementById('tabTrack');
+    const tabAlbum    = document.getElementById('tabAlbum');
+    const tabPlaylist = document.getElementById('tabPlaylist');
+    const trackSection    = document.getElementById('trackSection');
+    const albumSection    = document.getElementById('albumSection');
+    const playlistSection = document.getElementById('playlistSection');
 
-    const tabActiveClasses   = ['bg-white', 'dark:bg-gray-700', 'text-gray-800', 'dark:text-gray-100', 'shadow-sm'];
-    const tabInactiveClasses = ['text-gray-500', 'dark:text-gray-400', 'hover:text-gray-700', 'dark:hover:text-gray-200'];
+    const tabs = {
+        track:    { btn: tabTrack,    section: trackSection },
+        album:    { btn: tabAlbum,    section: albumSection },
+        playlist: { btn: tabPlaylist, section: playlistSection },
+    };
+
+    // Dispatch preview/output refresh to the handler for the active mode.
+    function updateActivePreview() {
+        if (mode === 'album') updateAlbumPreview();
+        else if (mode === 'playlist') updatePlaylistPreview();
+        else updatePreview();
+    }
+
+    function renderActiveOutput() {
+        if (mode === 'album') updateAlbumMarkdown();
+        else if (mode === 'playlist') updatePlaylistMarkdown();
+        else updateMarkdown();
+    }
 
     function switchTab(newMode) {
         mode = newMode;
-        const isTrack = mode === 'track';
-
-        tabTrack.classList.toggle('bg-white', isTrack);
-        tabTrack.classList.toggle('dark:bg-gray-700', isTrack);
-        tabTrack.classList.toggle('text-gray-800', isTrack);
-        tabTrack.classList.toggle('dark:text-gray-100', isTrack);
-        tabTrack.classList.toggle('shadow-sm', isTrack);
-        tabTrack.classList.toggle('text-gray-500', !isTrack);
-        tabTrack.classList.toggle('dark:text-gray-400', !isTrack);
-
-        tabAlbum.classList.toggle('bg-white', !isTrack);
-        tabAlbum.classList.toggle('dark:bg-gray-700', !isTrack);
-        tabAlbum.classList.toggle('text-gray-800', !isTrack);
-        tabAlbum.classList.toggle('dark:text-gray-100', !isTrack);
-        tabAlbum.classList.toggle('shadow-sm', !isTrack);
-        tabAlbum.classList.toggle('text-gray-500', isTrack);
-        tabAlbum.classList.toggle('dark:text-gray-400', isTrack);
-
-        trackSection.classList.toggle('hidden', !isTrack);
-        albumSection.classList.toggle('hidden', isTrack);
+        for (const [m, { btn, section }] of Object.entries(tabs)) {
+            const active = m === mode;
+            btn.classList.toggle('bg-white', active);
+            btn.classList.toggle('dark:bg-gray-700', active);
+            btn.classList.toggle('text-gray-800', active);
+            btn.classList.toggle('dark:text-gray-100', active);
+            btn.classList.toggle('shadow-sm', active);
+            btn.classList.toggle('text-gray-500', !active);
+            btn.classList.toggle('dark:text-gray-400', !active);
+            btn.classList.toggle('hover:text-gray-700', !active);
+            btn.classList.toggle('dark:hover:text-gray-200', !active);
+            section.classList.toggle('hidden', !active);
+        }
 
         // Reset preview when switching tabs
         previewArea.classList.add('hidden');
         emptyState.classList.remove('hidden');
         markdownSection.classList.add('hidden');
 
-        if (!isTrack) updateAlbumPreview();
-        else updatePreview();
+        updateActivePreview();
     }
 
     tabTrack.addEventListener('click', () => switchTab('track'));
     tabAlbum.addEventListener('click', () => switchTab('album'));
+    tabPlaylist.addEventListener('click', () => switchTab('playlist'));
 
     // ── Album mode ───────────────────────────────────────────────────────────
     const albumMusicURLInput  = document.getElementById('albumMusicURL');
@@ -205,6 +219,119 @@ document.addEventListener('DOMContentLoaded', () => {
         setAlbumStatus(`ID: ${parsed.id} を検出しました`, 'text-green-600 dark:text-green-400');
         updateAlbumPreview();
     }, 500));
+
+    // ── Playlist mode ─────────────────────────────────────────────────────────
+    const playlistMusicURLInput = document.getElementById('playlistMusicURL');
+    const playlistLookupStatus  = document.getElementById('playlistLookupStatus');
+    const playlistDesc          = document.getElementById('playlistDesc');
+    const playlistDescFetch     = document.getElementById('playlistDescFetch');
+
+    function setPlaylistStatus(msg, color) {
+        playlistLookupStatus.textContent = msg;
+        playlistLookupStatus.className = `text-xs ${color}`;
+        playlistLookupStatus.classList.remove('hidden');
+    }
+
+    function parsePlaylistURL(urlStr) {
+        let u;
+        try { u = new URL(urlStr); } catch { return null; }
+        if (u.hostname !== 'music.apple.com') return null;
+        const parts = u.pathname.split('/').filter(Boolean);
+        const pi = parts.indexOf('playlist');
+        if (pi < 0 || pi === parts.length - 1) return null;
+        const id = parts[parts.length - 1];
+        if (!/^pl\.[A-Za-z0-9._-]+$/.test(id)) return null;
+        const country = pi >= 1 && /^[a-z]{2}$/.test(parts[0]) ? parts[0] : 'us';
+        return { id, country };
+    }
+
+    function playlistAPIParams(theme) {
+        const p = new URLSearchParams({
+            id: playlistId,
+            theme,
+            badge: showBadge ? '1' : '0',
+            country: playlistCountry,
+        });
+        // Always send desc so user edits (and clearing it) take effect.
+        p.set('desc', playlistDesc.value);
+        return p.toString();
+    }
+
+    function updatePlaylistPreview() {
+        if (!playlistId) {
+            previewArea.classList.add('hidden');
+            emptyState.classList.remove('hidden');
+            markdownSection.classList.add('hidden');
+            return;
+        }
+
+        previewArea.classList.remove('hidden');
+        emptyState.classList.add('hidden');
+        markdownSection.classList.remove('hidden');
+
+        previewDark.src  = `/api/playlist?${playlistAPIParams('dark')}`;
+        previewLight.src = `/api/playlist?${playlistAPIParams('light')}`;
+
+        updatePlaylistMarkdown();
+    }
+
+    function updatePlaylistMarkdown() {
+        if (!playlistId) return;
+        const cardURL = `${window.location.origin}/api/playlist?${playlistAPIParams(cardTheme)}`;
+        markdownOutput.textContent = formatEmbed(cardURL, playlistOriginalURL, 'Playlist');
+    }
+
+    // Pull the scraped description into the editable textarea.
+    async function fetchPlaylistMeta() {
+        if (!playlistId) return;
+        try {
+            const resp = await fetch(`/api/playlist?id=${playlistId}&country=${playlistCountry}&format=json`);
+            const data = await resp.json();
+            playlistDesc.value = data.description || '';
+            setPlaylistStatus(`取得しました: ${data.name || playlistId}`, 'text-green-600 dark:text-green-400');
+        } catch {
+            setPlaylistStatus('情報の取得に失敗しました。', 'text-red-500 dark:text-red-400');
+        }
+    }
+
+    playlistMusicURLInput.addEventListener('input', debounce(async e => {
+        const val = e.target.value.trim();
+        if (!val) {
+            playlistLookupStatus.classList.add('hidden');
+            playlistId = null;
+            playlistCountry = 'us';
+            playlistOriginalURL = null;
+            updatePlaylistPreview();
+            return;
+        }
+        const parsed = parsePlaylistURL(val);
+        if (!parsed) {
+            setPlaylistStatus('プレイリストURLが認識できません。例: https://music.apple.com/jp/playlist/.../pl.xxxxxxxx', 'text-amber-500 dark:text-amber-400');
+            playlistId = null;
+            playlistOriginalURL = null;
+            updatePlaylistPreview();
+            return;
+        }
+        playlistId = parsed.id;
+        playlistCountry = parsed.country;
+        playlistOriginalURL = val;
+        setPlaylistStatus(`ID: ${parsed.id} を検出しました`, 'text-green-600 dark:text-green-400');
+        await fetchPlaylistMeta();
+        updatePlaylistPreview();
+    }, 600));
+
+    playlistDesc.addEventListener('input', debounce(() => {
+        if (mode === 'playlist') updatePlaylistPreview();
+    }, 500));
+
+    playlistDescFetch.addEventListener('click', async () => {
+        if (!playlistId) {
+            setPlaylistStatus('先にプレイリストURLを入力してください。', 'text-amber-500 dark:text-amber-400');
+            return;
+        }
+        await fetchPlaylistMeta();
+        updatePlaylistPreview();
+    });
 
     // ── Track mode ───────────────────────────────────────────────────────────
     function buildParams(theme) {
@@ -372,8 +499,7 @@ document.addEventListener('DOMContentLoaded', () => {
         showBadge = !showBadge;
         localStorage.setItem('showBadge', String(showBadge));
         applyBadgeToggleUI();
-        if (mode === 'album') updateAlbumPreview();
-        else updatePreview();
+        updateActivePreview();
     });
 
     applyBadgeToggleUI();
@@ -409,8 +535,7 @@ document.addEventListener('DOMContentLoaded', () => {
         cardThemeToggle.style.backgroundColor = isDark ? '#f43f5e' : '#4b5563';
         themeLabel.textContent = isDark ? 'Dark' : 'Light';
 
-        if (mode === 'album') updateAlbumMarkdown();
-        else updateMarkdown();
+        renderActiveOutput();
     });
 
     // Output format toggle (Markdown / HTML)
@@ -430,17 +555,12 @@ document.addEventListener('DOMContentLoaded', () => {
         setSegActive(fmtHtmlBtn, !md);
     }
 
-    function renderOutput() {
-        if (mode === 'album') updateAlbumMarkdown();
-        else updateMarkdown();
-    }
-
     function setFormat(fmt) {
         if (outputFormat === fmt) return;
         outputFormat = fmt;
         localStorage.setItem('outputFormat', fmt);
         applyFormatUI();
-        renderOutput();
+        renderActiveOutput();
     }
 
     fmtMarkdownBtn.addEventListener('click', () => setFormat('markdown'));

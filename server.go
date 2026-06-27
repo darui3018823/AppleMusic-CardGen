@@ -280,6 +280,105 @@ const albumSvgTmplSrc = `<?xml version="1.0" encoding="UTF-8"?>
 
 var albumTmpl = template.Must(template.New("album").Parse(albumSvgTmplSrc))
 
+const playlistSvgTmplSrc = `<?xml version="1.0" encoding="UTF-8"?>
+<svg viewBox="0 0 600 {{.SVGHeight}}" width="600" height="{{.SVGHeight}}" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <clipPath id="card">
+      <rect width="600" height="{{.SVGHeight}}" rx="14"/>
+    </clipPath>
+    <clipPath id="art">
+      <rect x="16" y="16" width="110" height="110" rx="10"/>
+    </clipPath>
+  </defs>
+  <g clip-path="url(#card)">
+
+    <!-- ===== TOP SECTION ===== -->
+    <rect width="600" height="{{.SVGHeight}}" fill="{{.BgColor}}"/>
+
+    <!-- Artwork -->
+    {{if .ArtworkBase64 -}}
+    <image href="data:image/jpeg;base64,{{.ArtworkBase64}}" x="16" y="16" width="110" height="110" clip-path="url(#art)" preserveAspectRatio="xMidYMid slice"/>
+    {{- else -}}
+    <rect x="16" y="16" width="110" height="110" rx="10" fill="#3a3a3c"/>
+    <text x="71" y="77" text-anchor="middle" font-family="sans-serif" font-size="36" fill="#636366">&#9835;</text>
+    {{- end}}
+
+    <!-- Generator credit -->
+    <text x="584" y="27" text-anchor="end" font-family="sans-serif" font-size="10" font-weight="500" fill="{{.AccentColor}}">Apple Music Card Generator</text>
+
+    <!-- Title / Curator / Meta -->
+    <text x="140" y="36" font-family="sans-serif" font-size="13" font-weight="600" fill="{{.PlaylistNameColor}}">{{.PlaylistName}}</text>
+    <text x="140" y="52" font-family="sans-serif" font-size="11" fill="{{.CuratorColor}}">{{.CuratorName}}</text>
+    <text x="140" y="65" font-family="sans-serif" font-size="10" fill="{{.MetaColor}}">{{.Meta}}</text>
+
+    <!-- Info divider -->
+    <line x1="140" y1="75" x2="584" y2="75" stroke="{{.DividerColor}}" stroke-width="0.5"/>
+
+    <!-- Description (max 2 lines) -->
+    {{if .DescLines -}}
+    <text x="140" y="88" font-family="sans-serif" font-size="10" fill="{{.DescColor}}">{{index .DescLines 0}}</text>
+    {{- end}}
+    {{if gt (len .DescLines) 1 -}}
+    <text x="140" y="100" font-family="sans-serif" font-size="10" fill="{{.DescColor}}">{{index .DescLines 1}}</text>
+    {{- end}}
+
+    <!-- "Listen on Apple Music" badge -->
+    {{if .ShowBadge -}}
+    <g transform="translate(488, 110) scale(0.6829)">
+      <defs>
+        <linearGradient id="playlist_badge_grad" gradientUnits="userSpaceOnUse" x1="20.1295" y1="32.4838" x2="20.1295" y2="7.9604">
+          <stop offset="0" stop-color="#FA233B"/>
+          <stop offset="1" stop-color="#FB5C74"/>
+        </linearGradient>
+      </defs>
+      <path fill="#A6A6A6" d="M130.09,0H9.53C9.17,0,8.81,0,8.44,0C8.13,0,7.83,0.01,7.52,0.01c-0.67,0.02-1.34,0.06-2,0.18c-0.67,0.12-1.29,0.32-1.9,0.63C3.02,1.12,2.47,1.52,2,2C1.52,2.47,1.12,3.02,0.82,3.62c-0.31,0.61-0.51,1.23-0.63,1.9c-0.12,0.66-0.16,1.33-0.18,2C0.01,7.83,0,8.14,0,8.44c0,0.36,0,0.73,0,1.09v20.93c0,0.37,0,0.73,0,1.09c0,0.31,0.01,0.61,0.02,0.92c0.02,0.67,0.06,1.34,0.18,2c0.12,0.67,0.31,1.3,0.63,1.9c0.3,0.6,0.7,1.14,1.18,1.61c0.47,0.48,1.02,0.88,1.62,1.18c0.61,0.31,1.23,0.51,1.9,0.63c0.66,0.12,1.34,0.16,2,0.18C7.83,39.99,8.13,40,8.44,40c0.37,0,0.73,0,1.09,0h120.56c0.36,0,0.72,0,1.08,0c0.3,0,0.62,0,0.92-0.01c0.67-0.02,1.34-0.06,2-0.18c0.67-0.12,1.29-0.32,1.91-0.63c0.6-0.3,1.14-0.7,1.62-1.18c0.48-0.47,0.87-1.02,1.18-1.61c0.31-0.61,0.51-1.23,0.62-1.9c0.12-0.66,0.16-1.33,0.19-2c0-0.31,0-0.61,0-0.92c0.01-0.36,0.01-0.72,0.01-1.09V9.54c0-0.37,0-0.73-0.01-1.09c0-0.31,0-0.61,0-0.92c-0.02-0.67-0.06-1.34-0.19-2c-0.11-0.67-0.31-1.29-0.62-1.9c-0.31-0.6-0.71-1.15-1.18-1.62c-0.47-0.47-1.02-0.87-1.62-1.18c-0.62-0.31-1.24-0.51-1.91-0.63c-0.66-0.12-1.33-0.16-2-0.18c-0.3,0-0.62-0.01-0.92-0.01C130.82,0,130.45,0,130.09,0L130.09,0z"/>
+      <path d="M8.44,39.12c-0.3,0-0.6,0-0.9-0.01c-0.56-0.02-1.22-0.05-1.87-0.16c-0.61-0.11-1.15-0.29-1.66-0.55c-0.52-0.26-0.99-0.61-1.4-1.02c-0.41-0.41-0.75-0.87-1.02-1.4c-0.26-0.5-0.44-1.05-0.54-1.66c-0.12-0.67-0.15-1.36-0.17-1.88c-0.01-0.21-0.01-0.91-0.01-0.91V8.44c0,0,0.01-0.69,0.01-0.89C0.9,7.03,0.93,6.34,1.05,5.68C1.16,5.06,1.34,4.52,1.6,4.02c0.27-0.52,0.61-0.99,1.02-1.4C3.03,2.2,3.5,1.86,4.01,1.6c0.51-0.26,1.06-0.44,1.65-0.54C6.34,0.93,7.02,0.9,7.54,0.89l0.9-0.01h122.73l0.91,0.01c0.51,0.01,1.2,0.04,1.86,0.16c0.6,0.11,1.15,0.28,1.67,0.55c0.51,0.26,0.98,0.61,1.39,1.02c0.41,0.41,0.75,0.88,1.02,1.4c0.26,0.51,0.43,1.05,0.54,1.65c0.12,0.63,0.15,1.28,0.17,1.89c0,0.28,0,0.59,0,0.89c0.01,0.38,0.01,0.73,0.01,1.09v20.93c0,0.36,0,0.72-0.01,1.08c0,0.33,0,0.62,0,0.93c-0.02,0.59-0.06,1.24-0.17,1.85c-0.1,0.61-0.28,1.16-0.54,1.67c-0.27,0.52-0.61,0.99-1.02,1.39c-0.41,0.42-0.88,0.76-1.4,1.02c-0.52,0.26-1.05,0.44-1.67,0.55c-0.64,0.12-1.3,0.15-1.87,0.16c-0.29,0.01-0.6,0.01-0.9,0.01l-1.08,0L8.44,39.12z"/>
+      <path fill="#FFFFFF" d="M42.12,14.75h-3.71V8.8h0.92v5.11h2.79V14.75z"/>
+      <path fill="#FFFFFF" d="M43.21,8.93c0-0.31,0.24-0.54,0.57-0.54s0.57,0.24,0.57,0.54c0,0.31-0.24,0.54-0.57,0.54S43.21,9.23,43.21,8.93z M43.34,10.26h0.88v4.49h-0.88V10.26z"/>
+      <path fill="#FFFFFF" d="M47.3,10.17c1.01,0,1.67,0.47,1.76,1.26h-0.85c-0.08-0.33-0.4-0.54-0.91-0.54c-0.5,0-0.87,0.24-0.87,0.59c0,0.27,0.23,0.44,0.71,0.55l0.75,0.17c0.85,0.2,1.25,0.56,1.25,1.23c0,0.85-0.79,1.41-1.86,1.41c-1.07,0-1.77-0.48-1.84-1.28h0.89c0.11,0.35,0.44,0.56,0.98,0.56c0.55,0,0.95-0.25,0.95-0.61c0-0.27-0.21-0.44-0.66-0.55l-0.78-0.18c-0.85-0.2-1.25-0.59-1.25-1.26C45.56,10.73,46.29,10.17,47.3,10.17z"/>
+      <path fill="#FFFFFF" d="M51.52,9.14v1.14h0.97v0.75h-0.97v2.31c0,0.47,0.19,0.68,0.64,0.68c0.14,0,0.21-0.01,0.34-0.02v0.74c-0.14,0.03-0.31,0.05-0.48,0.05c-0.99,0-1.38-0.35-1.38-1.21v-2.54h-0.71v-0.75h0.71V9.14H51.52z"/>
+      <path fill="#FFFFFF" d="M57.42,13.54c-0.2,0.81-0.92,1.3-1.95,1.3c-1.29,0-2.08-0.88-2.08-2.32c0-1.44,0.81-2.35,2.07-2.35c1.25,0,2.01,0.85,2.01,2.27v0.31H54.3v0.05c0.03,0.79,0.49,1.29,1.2,1.29c0.54,0,0.9-0.19,1.07-0.55H57.42z M54.3,12.09h2.27c-0.02-0.71-0.45-1.16-1.11-1.16C54.81,10.93,54.35,11.39,54.3,12.09z"/>
+      <path fill="#FFFFFF" d="M58.67,10.26h0.85v0.71h0.07c0.22-0.5,0.66-0.8,1.34-0.8c1,0,1.56,0.6,1.56,1.67v2.91H61.6v-2.69c0-0.72-0.31-1.08-0.97-1.08c-0.66,0-1.07,0.44-1.07,1.14v2.63h-0.89V10.26z"/>
+      <path fill="#FFFFFF" d="M66.09,12.5c0-1.45,0.81-2.33,2.12-2.33c1.31,0,2.12,0.88,2.12,2.33c0,1.46-0.81,2.34-2.12,2.34C66.9,14.84,66.09,13.96,66.09,12.5z M69.42,12.5c0-0.97-0.44-1.54-1.2-1.54c-0.77,0-1.21,0.57-1.21,1.54c0,0.98,0.43,1.55,1.21,1.55C68.98,14.05,69.42,13.48,69.42,12.5z"/>
+      <path fill="#FFFFFF" d="M71.53,10.26h0.85v0.71h0.07c0.22-0.5,0.66-0.8,1.34-0.8c1,0,1.56,0.6,1.56,1.67v2.91h-0.89v-2.69c0-0.72-0.31-1.08-0.97-1.08s-1.07,0.44-1.07,1.14v2.63h-0.89V10.26z"/>
+      <path fill="#FFFFFF" d="M46.04,27.84H41.3l-1.14,3.36h-2.01l4.49-12.43h2.08l4.49,12.43h-2.04L46.04,27.84z M41.79,26.29h3.76l-1.85-5.45h-0.05L41.79,26.29z"/>
+      <path fill="#FFFFFF" d="M58.9,26.67c0,2.82-1.51,4.62-3.78,4.62c-1.29,0-2.32-0.58-2.85-1.58h-0.04v4.49h-1.86V22.14h1.8v1.51h0.03c0.52-0.97,1.62-1.6,2.89-1.6C57.38,22.04,58.9,23.86,58.9,26.67z M56.99,26.67c0-1.83-0.95-3.04-2.39-3.04c-1.42,0-2.38,1.23-2.38,3.04c0,1.83,0.96,3.05,2.38,3.05C56.04,29.72,56.99,28.52,56.99,26.67z"/>
+      <path fill="#FFFFFF" d="M68.86,26.67c0,2.82-1.51,4.62-3.78,4.62c-1.29,0-2.32-0.58-2.85-1.58h-0.04v4.49h-1.86V22.14h1.8v1.51h0.03c0.52-0.97,1.62-1.6,2.89-1.6C67.35,22.04,68.86,23.86,68.86,26.67z M66.95,26.67c0-1.83-0.95-3.04-2.39-3.04c-1.42,0-2.38,1.23-2.38,3.04c0,1.83,0.96,3.05,2.38,3.05C66,29.72,66.95,28.52,66.95,26.67z"/>
+      <path fill="#FFFFFF" d="M70.36,18.77h1.86V31.2h-1.86V18.77z"/>
+      <path fill="#FFFFFF" d="M81.9,28.54c-0.25,1.65-1.85,2.77-3.9,2.77c-2.63,0-4.27-1.77-4.27-4.6c0-2.84,1.65-4.69,4.19-4.69c2.51,0,4.08,1.72,4.08,4.47v0.64h-6.4v0.11c0,1.55,0.97,2.57,2.44,2.57c1.03,0,1.84-0.49,2.09-1.27H81.9z M75.61,25.83h4.53c-0.04-1.39-0.93-2.3-2.22-2.3C76.64,23.53,75.71,24.46,75.61,25.83z"/>
+      <path fill="#FFFFFF" d="M98.05,31.2v-9.15h-0.06l-3.75,9.05h-1.43l-3.76-9.05H89v9.15h-1.76V18.77h2.23l4.02,9.81h0.07l4.01-9.81h2.24V31.2H98.05z"/>
+      <path fill="#FFFFFF" d="M109.72,31.2h-1.78v-1.56h-0.04c-0.52,1.09-1.42,1.66-2.81,1.66c-1.97,0-3.18-1.27-3.18-3.35v-5.81h1.86v5.45c0,1.38,0.65,2.11,1.94,2.11c1.34,0,2.15-0.93,2.15-2.34v-5.22h1.86V31.2z"/>
+      <path fill="#FFFFFF" d="M115.01,22.04c2.01,0,3.45,1.11,3.49,2.71h-1.75c-0.08-0.8-0.76-1.29-1.79-1.29c-1.01,0-1.68,0.46-1.68,1.17c0,0.54,0.45,0.9,1.39,1.14l1.53,0.35c1.83,0.44,2.51,1.11,2.51,2.44c0,1.64-1.55,2.76-3.76,2.76c-2.14,0-3.57-1.09-3.71-2.75h1.84c0.13,0.87,0.83,1.34,1.96,1.34c1.11,0,1.81-0.46,1.81-1.18c0-0.56-0.34-0.86-1.29-1.1l-1.62-0.4c-1.64-0.4-2.46-1.23-2.46-2.49C111.46,23.13,112.9,22.04,115.01,22.04z"/>
+      <path fill="#FFFFFF" d="M120.16,19.75c0-0.59,0.48-1.07,1.08-1.07c0.6,0,1.09,0.47,1.09,1.07c0,0.59-0.48,1.06-1.09,1.06C120.64,20.81,120.16,20.34,120.16,19.75z M120.3,22.14h1.86v9.06h-1.86V22.14z"/>
+      <path fill="#FFFFFF" d="M130.17,25.26c-0.16-0.96-0.91-1.67-2.14-1.67c-1.43,0-2.38,1.2-2.38,3.08c0,1.93,0.96,3.09,2.39,3.09c1.15,0,1.91-0.58,2.12-1.63h1.79c-0.21,1.9-1.73,3.18-3.93,3.18c-2.58,0-4.27-1.77-4.27-4.64c0-2.82,1.69-4.64,4.25-4.64c2.33,0,3.77,1.47,3.93,3.23H130.17z"/>
+      <path fill-rule="evenodd" clip-rule="evenodd" fill="url(#playlist_badge_grad)" d="M32.71,15.29c0-0.3,0-0.6,0-0.9c0-0.25,0-0.51-0.01-0.76c-0.01-0.55-0.05-1.11-0.15-1.65c-0.1-0.55-0.26-1.07-0.52-1.57c-0.25-0.49-0.58-0.95-0.97-1.34c-0.39-0.39-0.84-0.72-1.34-0.97c-0.5-0.26-1.02-0.42-1.57-0.52c-0.55-0.1-1.1-0.13-1.65-0.15c-0.25-0.01-0.51-0.01-0.76-0.01c-0.3,0-0.6,0-0.9,0h-9.42c-0.3,0-0.6,0-0.9,0c-0.25,0-0.51,0-0.76,0.01c-0.55,0.01-1.11,0.05-1.65,0.15c-0.55,0.1-1.07,0.26-1.57,0.52C10.04,8.35,9.59,8.67,9.2,9.07C8.8,9.46,8.48,9.91,8.22,10.4c-0.26,0.5-0.42,1.02-0.52,1.57c-0.1,0.55-0.13,1.1-0.15,1.65c-0.01,0.25-0.01,0.51-0.01,0.76c0,0.3,0,0.6,0,0.9v9.42c0,0.3,0,0.6,0,0.9c0,0.25,0,0.51,0.01,0.76c0.01,0.55,0.05,1.11,0.15,1.65c0.1,0.55,0.26,1.07,0.52,1.57c0.25,0.49,0.58,0.95,0.97,1.34c0.39,0.39,0.84,0.72,1.34,0.97c0.5,0.26,1.02,0.42,1.57,0.52c0.55,0.1,1.1,0.13,1.65,0.15c0.25,0.01,0.51,0.01,0.76,0.01c0.3,0,0.6,0,0.9,0h9.42c0.3,0,0.6,0,0.9,0c0.25,0,0.51,0,0.76-0.01c0.55-0.01,1.11-0.05,1.65-0.15c0.55-0.1,1.07-0.26,1.57-0.52c0.49-0.25,0.95-0.58,1.34-0.97c0.39-0.39,0.72-0.84,0.97-1.34c0.26-0.5,0.42-1.02,0.52-1.57c0.1-0.55,0.13-1.1,0.15-1.65c0.01-0.25,0.01-0.51,0.01-0.76c0-0.3,0-0.6,0-0.9V15.29z"/>
+      <path fill-rule="evenodd" clip-rule="evenodd" fill="#FFFFFF" d="M25.34,11.26c-0.06,0.01-0.6,0.1-0.67,0.11l-7.48,1.51l0,0c-0.2,0.04-0.35,0.11-0.47,0.21c-0.14,0.12-0.22,0.29-0.25,0.49c-0.01,0.04-0.02,0.13-0.02,0.25c0,0,0,7.64,0,9.36c0,0.22-0.02,0.43-0.17,0.61c-0.15,0.18-0.33,0.24-0.55,0.28l-0.49,0.1c-0.62,0.12-1.02,0.21-1.38,0.35c-0.35,0.14-0.61,0.31-0.82,0.52c-0.41,0.43-0.58,1.02-0.52,1.56c0.05,0.47,0.26,0.91,0.62,1.25c0.24,0.22,0.55,0.39,0.91,0.47c0.37,0.08,0.77,0.05,1.35-0.07c0.31-0.06,0.6-0.16,0.87-0.32c0.27-0.16,0.51-0.38,0.69-0.64c0.18-0.26,0.3-0.55,0.37-0.86c0.07-0.32,0.08-0.61,0.08-0.93V17.4c0-0.44,0.12-0.55,0.47-0.63c0,0,6.22-1.25,6.51-1.31c0.4-0.08,0.6,0.04,0.6,0.46l0,5.54c0,0.22,0,0.44-0.15,0.62c-0.15,0.18-0.33,0.24-0.55,0.28c-0.16,0.03-0.33,0.07-0.49,0.1c-0.62,0.12-1.02,0.21-1.38,0.35c-0.35,0.14-0.61,0.31-0.82,0.52c-0.41,0.43-0.59,1.02-0.54,1.56c0.05,0.47,0.27,0.91,0.64,1.25c0.24,0.22,0.55,0.39,0.91,0.46c0.37,0.08,0.77,0.05,1.35-0.07c0.31-0.06,0.6-0.15,0.87-0.32c0.27-0.16,0.51-0.38,0.69-0.64c0.18-0.26,0.3-0.55,0.37-0.86c0.07-0.32,0.07-0.61,0.07-0.93V11.92C25.97,11.49,25.74,11.23,25.34,11.26z"/>
+    </g>
+    {{- end}}
+
+    <!-- ===== SECTION SEPARATOR ===== -->
+    <line x1="0" y1="142" x2="600" y2="142" stroke="{{.DividerColor}}" stroke-width="1"/>
+    <rect x="0" y="142" width="600" height="{{.SVGHeight}}" fill="{{.TrackBgColor}}"/>
+
+    <!-- ===== TRACK SECTION ===== -->
+    {{range .Tracks -}}
+    <text x="16"  y="{{.Y}}" font-family="sans-serif" font-size="11" fill="{{$.TrackNumColor}}">{{.Number}}.</text>
+    <text x="34"  y="{{.Y}}" font-family="sans-serif" font-size="12" fill="{{$.TrackNameColor}}">{{.Name}}</text>
+    <text x="242" y="{{.Y}}" font-family="sans-serif" font-size="10" fill="{{$.ArtistColor}}">{{.Artist}}</text>
+    <text x="392" y="{{.Y}}" font-family="sans-serif" font-size="10" fill="{{$.AlbumColor}}">{{.Album}}</text>
+    <text x="580" y="{{.Y}}" text-anchor="end" font-family="sans-serif" font-size="10" fill="{{$.TimeColor}}">{{.Time}}</text>
+    <line x1="16" y1="{{.LineY}}" x2="584" y2="{{.LineY}}" stroke="{{$.TrackDivColor}}" stroke-width="0.5"/>
+    {{end -}}
+
+    {{if .RemainingCount -}}
+    <text x="16" y="{{.RemainingY}}" font-family="sans-serif" font-size="11" fill="{{.MetaColor}}">他{{.RemainingCount}}曲...</text>
+    {{- end}}
+
+  </g>
+</svg>`
+
+var playlistTmpl = template.Must(template.New("playlist").Parse(playlistSvgTmplSrc))
+
 func validCountry(s string) bool {
 	if len(s) != 2 {
 		return false
@@ -539,6 +638,554 @@ func handleAlbum(w http.ResponseWriter, r *http.Request) {
 
 	if err := albumTmpl.Execute(w, data); err != nil {
 		log.Printf("album template error: %v", err)
+	}
+}
+
+// ── Playlist card ─────────────────────────────────────────────────────────────
+
+// PlaylistTrack is one rendered track row in the playlist card.
+type PlaylistTrack struct {
+	Number int
+	Name   string
+	Artist string
+	Album  string
+	Time   string
+	Y      int
+	LineY  int
+}
+
+// PlaylistCardData is the data passed to the playlist SVG template.
+type PlaylistCardData struct {
+	SVGHeight int
+
+	BgColor       string
+	TrackBgColor  string
+	DividerColor  string
+	TrackDivColor string
+	AccentColor   string
+
+	ArtworkBase64 string
+
+	PlaylistName      string
+	PlaylistNameColor string
+	CuratorName       string
+	CuratorColor      string
+	Meta              string
+	MetaColor         string
+
+	DescLines []string
+	DescColor string
+
+	TrackNumColor  string
+	TrackNameColor string
+	ArtistColor    string
+	AlbumColor     string
+	TimeColor      string
+
+	Tracks         []PlaylistTrack
+	RemainingCount int
+	RemainingY     int
+
+	ShowBadge bool
+}
+
+// PlaylistTrackData is one track parsed from the scraped page data.
+type PlaylistTrackData struct {
+	Name     string
+	Artist   string
+	Album    string
+	Duration int // milliseconds
+}
+
+// PlaylistData holds the playlist metadata scraped from the Apple Music page.
+type PlaylistData struct {
+	Name        string
+	Curator     string
+	Updated     string // e.g. "最終更新：2週間前"
+	TrackCount  int
+	Description string
+	ArtworkURL  string // {w}x{h} … {f} template form
+	Tracks      []PlaylistTrackData
+}
+
+const (
+	playlistFirstTrackY = 158
+	playlistLineSpacing = 20
+	playlistSepOffset   = 12
+	playlistMaxDisplay  = 7
+)
+
+// playlistSVGHeight computes the canvas height for the given number of displayed
+// rows, reserving extra space for the "他N曲..." line when hasRemaining is set.
+func playlistSVGHeight(displayed int, hasRemaining bool) int {
+	lastLineY := playlistFirstTrackY + (displayed-1)*playlistLineSpacing + playlistSepOffset
+	if hasRemaining {
+		return lastLineY + 14 + 14
+	}
+	return lastLineY + 14
+}
+
+// playlistRemainingY computes the baseline Y for the "他N曲..." line.
+func playlistRemainingY(displayed int) int {
+	lastLineY := playlistFirstTrackY + (displayed-1)*playlistLineSpacing + playlistSepOffset
+	return lastLineY + 14
+}
+
+// runeWidthPx estimates a glyph's rendered width: full size for full-width
+// glyphs, 0.6× for half-width.
+func runeWidthPx(r rune, fontSize float64) float64 {
+	if isFullWidth(r) {
+		return fontSize
+	}
+	return fontSize * 0.6
+}
+
+func measurePx(s string, fontSize float64) float64 {
+	var w float64
+	for _, r := range s {
+		w += runeWidthPx(r, fontSize)
+	}
+	return w
+}
+
+// wrapByPixels word-wraps s into at most maxLines lines that each fit within
+// maxPx at the given font size, breaking at spaces where possible and falling
+// back to mid-token breaks for space-less text (e.g. CJK). The last line is
+// suffixed with "..." when content had to be dropped.
+func wrapByPixels(s string, maxPx, fontSize float64, maxLines int) []string {
+	s = strings.TrimSpace(s)
+	if s == "" {
+		return nil
+	}
+	var lines []string
+	var line []rune
+	var lineW float64
+	lastSpace := -1
+	for _, r := range s {
+		cw := runeWidthPx(r, fontSize)
+		if lineW+cw > maxPx && len(line) > 0 {
+			if lastSpace > 0 && lastSpace < len(line) {
+				lines = append(lines, strings.TrimRight(string(line[:lastSpace]), " "))
+				line = append([]rune{}, line[lastSpace+1:]...)
+			} else {
+				lines = append(lines, string(line))
+				line = nil
+			}
+			lineW = 0
+			lastSpace = -1
+			for i, rr := range line {
+				lineW += runeWidthPx(rr, fontSize)
+				if rr == ' ' {
+					lastSpace = i
+				}
+			}
+		}
+		if r == ' ' {
+			lastSpace = len(line)
+		}
+		line = append(line, r)
+		lineW += cw
+	}
+	if len(line) > 0 {
+		lines = append(lines, string(line))
+	}
+
+	if len(lines) > maxLines {
+		lines = lines[:maxLines]
+		last := lines[maxLines-1]
+		for measurePx(last+"...", fontSize) > maxPx {
+			lr := []rune(last)
+			if len(lr) == 0 {
+				break
+			}
+			last = strings.TrimRight(string(lr[:len(lr)-1]), " ")
+		}
+		lines[maxLines-1] = last + "..."
+	}
+	return lines
+}
+
+// buildDescLines turns a description into at most two display lines. User-entered
+// newlines are honoured; an unbroken paragraph is word-wrapped to two lines.
+func buildDescLines(desc string) []string {
+	desc = strings.TrimSpace(desc)
+	if desc == "" {
+		return nil
+	}
+	if strings.Contains(desc, "\n") {
+		var out []string
+		for p := range strings.SplitSeq(desc, "\n") {
+			p = strings.TrimSpace(p)
+			if p == "" {
+				continue
+			}
+			out = append(out, truncateByPixels(p, 444, 10))
+			if len(out) == 2 {
+				break
+			}
+		}
+		return out
+	}
+	return wrapByPixels(desc, 444, 10, 2)
+}
+
+// buildPlaylistCoverURL fills the {w}x{h}…{f} artwork template. JPEG is requested
+// because the server only decodes JPEG/PNG, and 305px covers the 110px slot at 2x.
+func buildPlaylistCoverURL(tmpl string) string {
+	if tmpl == "" {
+		return ""
+	}
+	return strings.NewReplacer("{w}", "305", "{h}", "305", "{c}", "", "{f}", "jpg").Replace(tmpl)
+}
+
+// isPlaylistID reports whether s is a plausible Apple Music playlist id (pl.*).
+func isPlaylistID(s string) bool {
+	if !strings.HasPrefix(s, "pl.") || len(s) < 5 {
+		return false
+	}
+	for _, c := range s {
+		switch {
+		case c >= 'a' && c <= 'z', c >= 'A' && c <= 'Z', c >= '0' && c <= '9',
+			c == '.', c == '-', c == '_':
+		default:
+			return false
+		}
+	}
+	return true
+}
+
+// parsePlaylistURL extracts the playlist id and storefront from a
+// music.apple.com/{country}/playlist/{slug}/{id} link.
+func parsePlaylistURL(raw string) (id, country string, ok bool) {
+	u, err := url.Parse(raw)
+	if err != nil || u.Hostname() != "music.apple.com" {
+		return "", "", false
+	}
+	parts := strings.Split(strings.Trim(u.Path, "/"), "/")
+	pi := -1
+	for i, p := range parts {
+		if p == "playlist" {
+			pi = i
+			break
+		}
+	}
+	if pi < 0 || pi == len(parts)-1 {
+		return "", "", false
+	}
+	id = parts[len(parts)-1]
+	if !isPlaylistID(id) {
+		return "", "", false
+	}
+	if pi >= 1 && validCountry(parts[0]) {
+		country = parts[0]
+	}
+	return id, country, true
+}
+
+// ---- scraped page JSON (serialized-server-data) ----
+
+// plArtwork is the artwork node; header art uses a {w}x{h} dictionary template,
+// track art uses a resolved url.
+type plArtwork struct {
+	URL        string `json:"url"`
+	Dictionary struct {
+		URL string `json:"url"`
+	} `json:"dictionary"`
+}
+
+type plLink struct {
+	Title string `json:"title"`
+}
+
+// plItem is a superset of header- and track-lockup item fields so a single type
+// can decode both section kinds.
+type plItem struct {
+	Title           string    `json:"title"`
+	QuaternaryTitle string    `json:"quaternaryTitle"`
+	TrackCount      int       `json:"trackCount"`
+	ArtistName      string    `json:"artistName"`
+	Duration        int       `json:"duration"`
+	SubtitleLinks   []plLink  `json:"subtitleLinks"`
+	TertiaryLinks   []plLink  `json:"tertiaryLinks"`
+	Artwork         plArtwork `json:"artwork"`
+	Modal           struct {
+		ParagraphText string `json:"paragraphText"`
+	} `json:"modalPresentationDescriptor"`
+}
+
+type plSection struct {
+	ItemKind string   `json:"itemKind"`
+	Items    []plItem `json:"items"`
+}
+
+type plContainer struct {
+	Data struct {
+		Sections []plSection `json:"sections"`
+	} `json:"data"`
+}
+
+// extractSerializedServerData returns the JSON payload of the
+// <script id="serialized-server-data"> tag embedded in the page.
+func extractSerializedServerData(body string) (string, bool) {
+	const marker = `id="serialized-server-data"`
+	idx := strings.Index(body, marker)
+	if idx < 0 {
+		return "", false
+	}
+	rest := body[idx:]
+	gt := strings.IndexByte(rest, '>')
+	if gt < 0 {
+		return "", false
+	}
+	rest = rest[gt+1:]
+	if before, _, ok := strings.Cut(rest, "</script>"); ok {
+		return before, true
+	}
+	return "", false
+}
+
+var playlistCache sync.Map
+
+// fetchPlaylistData scrapes the Apple Music playlist page and parses its
+// serialized-server-data payload into a PlaylistData. Results are cached.
+func fetchPlaylistData(id, country string) (*PlaylistData, error) {
+	cacheKey := country + ":" + id
+	if cached, ok := playlistCache.Load(cacheKey); ok {
+		return cached.(*PlaylistData), nil
+	}
+
+	pageURL := fmt.Sprintf("https://music.apple.com/%s/playlist/_/%s", country, id)
+	client := &http.Client{Timeout: 8 * time.Second}
+	req, err := http.NewRequest("GET", pageURL, nil)
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15")
+	req.Header.Set("Accept-Language", "ja,en-US;q=0.9,en;q=0.8")
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("page returned HTTP %s", resp.Status)
+	}
+	bodyBytes, err := io.ReadAll(io.LimitReader(resp.Body, 8<<20))
+	if err != nil {
+		return nil, err
+	}
+
+	content, ok := extractSerializedServerData(string(bodyBytes))
+	if !ok {
+		return nil, fmt.Errorf("serialized-server-data not found")
+	}
+
+	// The payload is usually {"data":[{"data":{"sections":...}}]} but can also be
+	// a bare array of containers; try both shapes.
+	var sections []plSection
+	var obj struct {
+		Data []plContainer `json:"data"`
+	}
+	if err := json.Unmarshal([]byte(content), &obj); err == nil && len(obj.Data) > 0 {
+		sections = obj.Data[0].Data.Sections
+	}
+	if len(sections) == 0 {
+		var arr []plContainer
+		if err := json.Unmarshal([]byte(content), &arr); err == nil && len(arr) > 0 {
+			sections = arr[0].Data.Sections
+		}
+	}
+	if len(sections) == 0 {
+		return nil, fmt.Errorf("no sections in serialized data")
+	}
+
+	data := &PlaylistData{}
+	for _, sec := range sections {
+		switch sec.ItemKind {
+		case "containerDetailHeaderLockup":
+			if len(sec.Items) == 0 {
+				continue
+			}
+			h := sec.Items[0]
+			data.Name = h.Title
+			if len(h.SubtitleLinks) > 0 {
+				data.Curator = h.SubtitleLinks[0].Title
+			}
+			data.Updated = h.QuaternaryTitle
+			data.TrackCount = h.TrackCount
+			data.Description = h.Modal.ParagraphText
+			data.ArtworkURL = h.Artwork.Dictionary.URL
+		case "trackLockup":
+			for _, it := range sec.Items {
+				t := PlaylistTrackData{
+					Name:     it.Title,
+					Artist:   it.ArtistName,
+					Duration: it.Duration,
+				}
+				if len(it.TertiaryLinks) > 0 {
+					t.Album = it.TertiaryLinks[0].Title
+				}
+				data.Tracks = append(data.Tracks, t)
+			}
+		}
+	}
+
+	if data.Name == "" && len(data.Tracks) == 0 {
+		return nil, fmt.Errorf("playlist data empty")
+	}
+	playlistCache.Store(cacheKey, data)
+	return data, nil
+}
+
+func handlePlaylist(w http.ResponseWriter, r *http.Request) {
+	q := r.URL.Query()
+	id := q.Get("id")
+	country := q.Get("country")
+	if !validCountry(country) {
+		country = "us"
+	}
+	if id == "" {
+		if raw := q.Get("url"); raw != "" {
+			if pid, pc, ok := parsePlaylistURL(raw); ok {
+				id = pid
+				if pc != "" {
+					country = pc
+				}
+			}
+		}
+	}
+	if !isPlaylistID(id) {
+		http.Error(w, "invalid or missing playlist id (expected pl.* or ?url=)", http.StatusBadRequest)
+		return
+	}
+
+	theme := q.Get("theme")
+	if theme != "light" {
+		theme = "dark"
+	}
+	showBadge := q.Get("badge") != "0"
+
+	pl, err := fetchPlaylistData(id, country)
+	if err != nil {
+		log.Printf("fetchPlaylistData(%s, %s): %v", id, country, err)
+		pl = &PlaylistData{Name: "プレイリスト"}
+	}
+
+	// Metadata-only response for the front-end's description auto-fill.
+	if q.Get("format") == "json" {
+		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		w.Header().Set("Cache-Control", "public, max-age=3600")
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"name":        pl.Name,
+			"curator":     pl.Curator,
+			"updated":     pl.Updated,
+			"trackCount":  pl.TrackCount,
+			"description": pl.Description,
+		})
+		return
+	}
+
+	// Description: user override (?desc=) wins, otherwise the scraped paragraph.
+	desc := pl.Description
+	if v, ok := q["desc"]; ok {
+		desc = v[0]
+	}
+	descLines := buildDescLines(desc)
+	for i := range descLines {
+		descLines[i] = html.EscapeString(descLines[i])
+	}
+
+	display := pl.Tracks
+	if len(display) > playlistMaxDisplay {
+		display = display[:playlistMaxDisplay]
+	}
+	var rows []PlaylistTrack
+	for i, t := range display {
+		y := playlistFirstTrackY + i*playlistLineSpacing
+		rows = append(rows, PlaylistTrack{
+			Number: i + 1,
+			Name:   html.EscapeString(truncateByPixels(t.Name, 200, 12)),
+			Artist: html.EscapeString(truncateByPixels(t.Artist, 140, 10)),
+			Album:  html.EscapeString(truncateByPixels(stripAlbumTypeSuffix(t.Album), 130, 10)),
+			Time:   formatTrackDuration(t.Duration),
+			Y:      y,
+			LineY:  y + playlistSepOffset,
+		})
+	}
+
+	totalTracks := max(pl.TrackCount, len(pl.Tracks))
+	remaining := max(totalTracks-len(rows), 0)
+
+	displayed := len(rows)
+	if displayed == 0 {
+		displayed = 1
+	}
+
+	meta := pl.Updated
+	if totalTracks > 0 {
+		if meta != "" {
+			meta += " · "
+		}
+		meta += fmt.Sprintf("%d曲", totalTracks)
+	}
+
+	artworkB64, err := fetchArtwork(buildPlaylistCoverURL(pl.ArtworkURL))
+	if err != nil {
+		if pl.ArtworkURL != "" {
+			log.Printf("playlist artwork fetch failed (%s): %v", pl.ArtworkURL, err)
+		}
+		artworkB64 = ""
+	}
+
+	data := PlaylistCardData{
+		SVGHeight:      playlistSVGHeight(displayed, remaining > 0),
+		ArtworkBase64:  artworkB64,
+		PlaylistName:   html.EscapeString(truncateByPixels(pl.Name, 300, 13)),
+		CuratorName:    html.EscapeString(truncateByPixels(pl.Curator, 440, 11)),
+		Meta:           html.EscapeString(meta),
+		DescLines:      descLines,
+		Tracks:         rows,
+		RemainingCount: remaining,
+		RemainingY:     playlistRemainingY(displayed),
+		ShowBadge:      showBadge,
+	}
+
+	if theme == "dark" {
+		data.BgColor = "#1c1c1e"
+		data.TrackBgColor = "#1f1f21"
+		data.DividerColor = "#3a3a3c"
+		data.TrackDivColor = "#2c2c2e"
+		data.AccentColor = "#d6003b"
+		data.PlaylistNameColor = "#ffffff"
+		data.CuratorColor = "#8e8e93"
+		data.MetaColor = "#636366"
+		data.DescColor = "#636366"
+		data.TrackNumColor = "#636366"
+		data.TrackNameColor = "#ffffff"
+		data.ArtistColor = "#8e8e93"
+		data.AlbumColor = "#4a4a4e"
+		data.TimeColor = "#636366"
+	} else {
+		data.BgColor = "#f8f8fa"
+		data.TrackBgColor = "#f2f2f4"
+		data.DividerColor = "#d1d1d6"
+		data.TrackDivColor = "#e5e5ea"
+		data.AccentColor = "#f0233b"
+		data.PlaylistNameColor = "#1c1c1e"
+		data.CuratorColor = "#6c6c70"
+		data.MetaColor = "#aeaeb2"
+		data.DescColor = "#aeaeb2"
+		data.TrackNumColor = "#aeaeb2"
+		data.TrackNameColor = "#1c1c1e"
+		data.ArtistColor = "#6c6c70"
+		data.AlbumColor = "#c7c7cc"
+		data.TimeColor = "#aeaeb2"
+	}
+
+	w.Header().Set("Content-Type", "image/svg+xml; charset=utf-8")
+	w.Header().Set("Cache-Control", "public, max-age=3600")
+	if err := playlistTmpl.Execute(w, data); err != nil {
+		log.Printf("playlist template error: %v", err)
 	}
 }
 
@@ -848,6 +1495,7 @@ func main() {
 	mux.HandleFunc("/api/lookup", handleLookup)
 	mux.HandleFunc("/api/card", handleCard)
 	mux.HandleFunc("/api/album", handleAlbum)
+	mux.HandleFunc("/api/playlist", handlePlaylist)
 	mux.HandleFunc("/api/open", handleOpen)
 
 	mux.HandleFunc("/script.js", func(w http.ResponseWriter, r *http.Request) {

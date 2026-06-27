@@ -1,0 +1,158 @@
+{{/*
+=======================================================================
+  Playlist Card — Go text/template  (最終版 v6)
+
+  ---- データ構造 ----
+
+  type PlaylistCardData struct {
+      SVGHeight int    // PlaylistSVGHeight() で計算
+
+      BgColor        string  // dark:#1c1c1e  light:#f8f8fa
+      TrackBgColor   string  // dark:#1f1f21  light:(BgColor より微妙に変化)
+      DividerColor   string  // dark:#3a3a3c  light:#d1d1d6
+      TrackDivColor  string  // dark:#2c2c2e  light:#e5e5ea
+      AccentColor    string  // dark:#d6003b  light:#f0233b
+
+      ArtworkBase64  string  // 空文字 = プレースホルダ表示
+
+      PlaylistName      string
+      PlaylistNameColor string  // dark:#ffffff  light:#1c1c1e
+      CuratorName       string  // "by ユーザー名" or "Apple Music"
+      CuratorColor      string  // dark:#8e8e93  light:#6c6c70
+      Meta              string  // "最終更新: 2週間前 · 22曲" など
+      MetaColor         string  // dark:#636366  light:#aeaeb2
+
+      DescLines  []string // strings.SplitN(raw, "\n", 3)[:2]  最大2行
+      DescColor  string   // = MetaColor
+
+      TrackNumColor  string  // dark:#636366  light:#aeaeb2
+      TrackNameColor string  // dark:#ffffff  light:#1c1c1e
+      ArtistColor    string  // dark:#8e8e93  light:#6c6c70
+      AlbumColor     string  // dark:#4a4a4e  light:#c7c7cc
+      TimeColor      string  // dark:#636366  light:#aeaeb2
+
+      Tracks         []PlaylistTrack
+      RemainingCount int    // 0 = 非表示
+      RemainingY     int    // PlaylistRemainingY(len(Tracks)) で計算
+  }
+
+  type PlaylistTrack struct {
+      Number int
+      Name   string
+      Artist string  // truncate: Latin≤23 / CJK≤14
+      Album  string  // truncate: Latin≤14 / CJK≤9
+      Time   string
+      Y      int     // firstTrackY + index*lineSpacing
+      LineY  int     // Y + sepOffset
+  }
+
+  ---- Go 側レイアウト定数 ----
+
+  const (
+      PlaylistCoverY       = 16
+      PlaylistCoverSize    = 110
+      PlaylistSeparatorY   = 142   // coverY + coverSize + topMargin(16)
+      PlaylistFirstTrackY  = 158   // separatorY + 16
+      PlaylistLineSpacing  = 20
+      PlaylistSepOffset    = 12
+      PlaylistMaxDisplay   = 7
+  )
+
+  func PlaylistSVGHeight(displayedCount int, hasRemaining bool) int {
+      lastLineY := PlaylistFirstTrackY +
+          (displayedCount-1)*PlaylistLineSpacing + PlaylistSepOffset
+      if hasRemaining {
+          return lastLineY + 14 + 14  // remainingText(14) + bottomPad(14)
+      }
+      return lastLineY + 14
+  }
+  func PlaylistRemainingY(displayedCount int) int {
+      lastLineY := PlaylistFirstTrackY +
+          (displayedCount-1)*PlaylistLineSpacing + PlaylistSepOffset
+      return lastLineY + 14
+  }
+
+  // 例: 7曲 + 他N曲 → SVGHeight=318  /  5曲のみ → SVGHeight=280
+
+  ---- Album との色変数マッピング ----
+  PlaylistNameColor = AlbumNameColor
+  CuratorColor      = ArtistColor
+  DescColor         = MetaColor
+  TrackNumColor     = TrackNumColor   (同名)
+  TrackNameColor    = TrackNameColor  (同名)
+  ArtistColor       = ArtistColor     (同名)
+  AlbumColor        ← 新規 (dark:#4a4a4e  light:#c7c7cc)
+  TimeColor         = TrackNumColor   (同名)
+  TrackBgColor      ← 新規 (dark:#1f1f21  light: TBD)
+  TrackDivColor     ← 新規 (dark:#2c2c2e  light: TBD)
+=======================================================================
+*/}}
+<?xml version="1.0" encoding="UTF-8"?>
+<svg viewBox="0 0 600 {{.SVGHeight}}" width="600" height="{{.SVGHeight}}" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <clipPath id="card">
+      <rect width="600" height="{{.SVGHeight}}" rx="14"/>
+    </clipPath>
+    <clipPath id="art">
+      <rect x="16" y="16" width="110" height="110" rx="10"/>
+    </clipPath>
+  </defs>
+  <g clip-path="url(#card)">
+
+    <!-- ===== TOP SECTION ===== -->
+    <rect width="600" height="{{.SVGHeight}}" fill="{{.BgColor}}"/>
+
+    <!-- Artwork -->
+    {{if .ArtworkBase64 -}}
+    <image href="data:image/jpeg;base64,{{.ArtworkBase64}}" x="16" y="16" width="110" height="110" clip-path="url(#art)" preserveAspectRatio="xMidYMid slice"/>
+    {{- else -}}
+    <rect x="16" y="16" width="110" height="110" rx="10" fill="#3a3a3c"/>
+    <text x="71" y="77" text-anchor="middle" font-family="sans-serif" font-size="36" fill="#636366">&#9835;</text>
+    {{- end}}
+
+    <!-- Generator credit -->
+    <text x="584" y="27" text-anchor="end" font-family="sans-serif" font-size="10" font-weight="500" fill="{{.AccentColor}}">Apple Music Card Generator</text>
+
+    <!-- Title / Curator / Meta -->
+    <text x="140" y="36" font-family="sans-serif" font-size="13" font-weight="600" fill="{{.PlaylistNameColor}}">{{.PlaylistName}}</text>
+    <text x="140" y="52" font-family="sans-serif" font-size="11" fill="{{.CuratorColor}}">{{.CuratorName}}</text>
+    <text x="140" y="65" font-family="sans-serif" font-size="10" fill="{{.MetaColor}}">{{.Meta}}</text>
+
+    <!-- Info divider (Title/Curator/Meta と Description の区切り) -->
+    <line x1="140" y1="75" x2="584" y2="75" stroke="{{.DividerColor}}" stroke-width="0.5"/>
+
+    <!-- Description (ユーザーが \n で改行、Go側で最大2行に制限) -->
+    {{if .DescLines -}}
+    <text x="140" y="88" font-family="sans-serif" font-size="10" fill="{{.DescColor}}">{{index .DescLines 0}}</text>
+    {{- end}}
+    {{if gt (len .DescLines) 1 -}}
+    <text x="140" y="100" font-family="sans-serif" font-size="10" fill="{{.DescColor}}">{{index .DescLines 1}}</text>
+    {{- end}}
+
+    <!-- "Listen on Apple Music" バッジ -->
+    <!-- bottom = 108 + 28*1.0667 ≈ 138、separator(y=142) まで 4px gap -->
+    <g transform="translate(444, 108) scale(1.0667)">
+      ... (Album テンプレートと同一の Apple Music バッジ path 群をここに配置) ...
+    </g>
+
+    <!-- ===== SECTION SEPARATOR  y = coverY(16) + coverSize(110) + margin(16) = 142 ===== -->
+    <line x1="0" y1="142" x2="600" y2="142" stroke="{{.DividerColor}}" stroke-width="1"/>
+    <rect x="0" y="142" width="600" height="{{.SVGHeight}}" fill="{{.TrackBgColor}}"/>
+
+    <!-- ===== TRACK SECTION ===== -->
+    <!-- cols: Num=16  Name=34  Artist=242  Album=392  Time=580(end) -->
+    {{range .Tracks -}}
+    <text x="16"  y="{{.Y}}" font-family="sans-serif" font-size="11" fill="{{$.TrackNumColor}}">{{.Number}}.</text>
+    <text x="34"  y="{{.Y}}" font-family="sans-serif" font-size="12" fill="{{$.TrackNameColor}}">{{.Name}}</text>
+    <text x="242" y="{{.Y}}" font-family="sans-serif" font-size="10" fill="{{$.ArtistColor}}">{{.Artist}}</text>
+    <text x="392" y="{{.Y}}" font-family="sans-serif" font-size="10" fill="{{$.AlbumColor}}">{{.Album}}</text>
+    <text x="580" y="{{.Y}}" text-anchor="end" font-family="sans-serif" font-size="10" fill="{{$.TimeColor}}">{{.Time}}</text>
+    <line x1="16" y1="{{.LineY}}" x2="584" y2="{{.LineY}}" stroke="{{$.TrackDivColor}}" stroke-width="0.5"/>
+    {{end -}}
+
+    {{if .RemainingCount -}}
+    <text x="16" y="{{.RemainingY}}" font-family="sans-serif" font-size="11" fill="{{.MetaColor}}">他{{.RemainingCount}}曲...</text>
+    {{- end}}
+
+  </g>
+</svg>

@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Playlist Card — static sample (dark theme)
+  Canvas: 600 × 318px (7 tracks + remaining)
+
+  Layout constants:
+    coverX=16  coverY=16  coverSize=110
+    separatorY = 16+110+16 = 142
+    badgeX=444  badgeY=108  (badge bottom=138, 4px gap from separator)
+    rightColX=140
+    infoDividerY=75  descLine1Y=88  descLine2Y=100
+    firstTrackY=158  lineSpacing=20  sepOffset=12
+    cols: Num=16  Name=34  Artist=242  Album=392  Time=580(end)
+-->
+<svg viewBox="0 0 600 318" width="600" height="318" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <clipPath id="card">
+      <rect width="600" height="318" rx="14"/>
+    </clipPath>
+    <clipPath id="art">
+      <rect x="16" y="16" width="110" height="110" rx="10"/>
+    </clipPath>
+  </defs>
+  <g clip-path="url(#card)">
+
+    <!-- ===== TOP SECTION (y 0–142) ===== -->
+    <rect width="600" height="318" fill="#1c1c1e"/>
+
+    <!-- Artwork placeholder -->
+    <rect x="16" y="16" width="110" height="110" rx="10" fill="#2c2c2e"/>
+    <text x="71" y="77" text-anchor="middle" font-family="sans-serif" font-size="36" fill="#48484a">&#9835;</text>
+
+    <!-- Generator credit -->
+    <text x="584" y="27" text-anchor="end" font-family="sans-serif" font-size="10" font-weight="500" fill="#d6003b">Apple Music Card Generator</text>
+
+    <!-- Title / Curator / Meta -->
+    <text x="140" y="36" font-family="sans-serif" font-size="13" font-weight="600" fill="#ffffff">Gacha City Radio - Forza Horizon 6</text>
+    <text x="140" y="52" font-family="sans-serif" font-size="11" fill="#8e8e93">だるるるだつるる</text>
+    <text x="140" y="65" font-family="sans-serif" font-size="10" fill="#636366">最終更新: 2週間前 · 22曲</text>
+
+    <!-- Info divider -->
+    <line x1="140" y1="75" x2="584" y2="75" stroke="#3a3a3c" stroke-width="0.5"/>
+
+    <!-- Description (ユーザーが \n で改行、最大 2 行) -->
+    <text x="140" y="88"  font-family="sans-serif" font-size="10" fill="#636366">Discover a variety of J-pop, J-rock, City Pop and more</text>
+    <text x="140" y="100" font-family="sans-serif" font-size="10" fill="#636366">on Gacha City Radio!</text>
+
+    <!-- Badge (bottom=138, gap 4px from separator y=142) -->
+    <!-- テンプレートでは Album と同一の path 群に差し替えること -->
+    <g transform="translate(444, 108) scale(1.0667)">
+      <rect width="131" height="28" rx="7" fill="#111111"/>
+      <rect width="131" height="28" rx="7" fill="none" stroke="#444448" stroke-width="0.5"/>
+      <text x="13" y="13" font-family="sans-serif" font-size="7"  fill="#8e8e93">Listen on</text>
+      <text x="13" y="24" font-family="sans-serif" font-size="10" font-weight="600" fill="#f2f2f7">Apple Music</text>
+    </g>
+
+    <!-- ===== SECTION SEPARATOR  y = coverY+coverSize+margin = 142 ===== -->
+    <line x1="0" y1="142" x2="600" y2="142" stroke="#3a3a3c" stroke-width="1"/>
+    <rect x="0" y="142" width="600" height="176" fill="#1f1f21"/>
+
+    <!-- ===== TRACK SECTION ===== -->
+    <!-- cols: Num=16  Name=34  Artist=242  Album=392  Time=580(end) -->
+    <!-- lineSpacing=20  sepOffset=12  firstTrackY=158 -->
+
+    <!-- Track 1 -->
+    <text x="16"  y="158" font-family="sans-serif" font-size="11" fill="#636366">1.</text>
+    <text x="34"  y="158" font-family="sans-serif" font-size="12" fill="#ffffff">Bling-Bang-Bang-Born</text>
+    <text x="242" y="158" font-family="sans-serif" font-size="10" fill="#8e8e93">Creepy Nuts</text>
+    <text x="392" y="158" font-family="sans-serif" font-size="10" fill="#4a4a4e">B.B.B.B</text>
+    <text x="580" y="158" text-anchor="end" font-family="sans-serif" font-size="10" fill="#636366">3:04</text>
+    <line x1="16" y1="170" x2="584" y2="170" stroke="#2c2c2e" stroke-width="0.5"/>
+
+    <!-- Track 2 -->
+    <text x="16"  y="178" font-family="sans-serif" font-size="11" fill="#636366">2.</text>
+    <text x="34"  y="178" font-family="sans-serif" font-size="12" fill="#ffffff">ダーリンゲームオーバーラブ</text>
+    <text x="242" y="178" font-family="sans-serif" font-size="10" fill="#8e8e93">マイキP</text>
+    <text x="392" y="178" font-family="sans-serif" font-size="10" fill="#4a4a4e">ダーリン...</text>
+    <text x="580" y="178" text-anchor="end" font-family="sans-serif" font-size="10" fill="#636366">4:12</text>
+    <line x1="16" y1="190" x2="584" y2="190" stroke="#2c2c2e" stroke-width="0.5"/>
+
+    <!-- Track 3 -->
+    <text x="16"  y="198" font-family="sans-serif" font-size="11" fill="#636366">3.</text>
+    <text x="34"  y="198" font-family="sans-serif" font-size="12" fill="#ffffff">TETETE</text>
+    <text x="242" y="198" font-family="sans-serif" font-size="10" fill="#8e8e93">ビラフ星人</text>
+    <text x="392" y="198" font-family="sans-serif" font-size="10" fill="#4a4a4e">TETETE</text>
+    <text x="580" y="198" text-anchor="end" font-family="sans-serif" font-size="10" fill="#636366">3:31</text>
+    <line x1="16" y1="210" x2="584" y2="210" stroke="#2c2c2e" stroke-width="0.5"/>
+
+    <!-- Track 4 -->
+    <text x="16"  y="218" font-family="sans-serif" font-size="11" fill="#636366">4.</text>
+    <text x="34"  y="218" font-family="sans-serif" font-size="12" fill="#ffffff">TAIDADA</text>
+    <text x="242" y="218" font-family="sans-serif" font-size="10" fill="#8e8e93">ずっと真夜中でいいのに。</text>
+    <text x="392" y="218" font-family="sans-serif" font-size="10" fill="#4a4a4e">TAIDADA</text>
+    <text x="580" y="218" text-anchor="end" font-family="sans-serif" font-size="10" fill="#636366">3:41</text>
+    <line x1="16" y1="230" x2="584" y2="230" stroke="#2c2c2e" stroke-width="0.5"/>
+
+    <!-- Track 5 -->
+    <text x="16"  y="238" font-family="sans-serif" font-size="11" fill="#636366">5.</text>
+    <text x="34"  y="238" font-family="sans-serif" font-size="12" fill="#ffffff">Take You Higher</text>
+    <text x="242" y="238" font-family="sans-serif" font-size="10" fill="#8e8e93">パン野実々美 &amp; KOTONO...</text>
+    <text x="392" y="238" font-family="sans-serif" font-size="10" fill="#4a4a4e">Take You Higher</text>
+    <text x="580" y="238" text-anchor="end" font-family="sans-serif" font-size="10" fill="#636366">3:21</text>
+    <line x1="16" y1="250" x2="584" y2="250" stroke="#2c2c2e" stroke-width="0.5"/>
+
+    <!-- Track 6 -->
+    <text x="16"  y="258" font-family="sans-serif" font-size="11" fill="#636366">6.</text>
+    <text x="34"  y="258" font-family="sans-serif" font-size="12" fill="#ffffff">新時代</text>
+    <text x="242" y="258" font-family="sans-serif" font-size="10" fill="#8e8e93">Ado</text>
+    <text x="392" y="258" font-family="sans-serif" font-size="10" fill="#4a4a4e">ONE PIECE FILM...</text>
+    <text x="580" y="258" text-anchor="end" font-family="sans-serif" font-size="10" fill="#636366">3:25</text>
+    <line x1="16" y1="270" x2="584" y2="270" stroke="#2c2c2e" stroke-width="0.5"/>
+
+    <!-- Track 7 -->
+    <text x="16"  y="278" font-family="sans-serif" font-size="11" fill="#636366">7.</text>
+    <text x="34"  y="278" font-family="sans-serif" font-size="12" fill="#ffffff">光るなら</text>
+    <text x="242" y="278" font-family="sans-serif" font-size="10" fill="#8e8e93">Goose house</text>
+    <text x="392" y="278" font-family="sans-serif" font-size="10" fill="#4a4a4e">光るなら</text>
+    <text x="580" y="278" text-anchor="end" font-family="sans-serif" font-size="10" fill="#636366">4:18</text>
+    <line x1="16" y1="290" x2="584" y2="290" stroke="#2c2c2e" stroke-width="0.5"/>
+
+    <!-- Remaining -->
+    <text x="16" y="304" font-family="sans-serif" font-size="11" fill="#636366">他15曲...</text>
+
+  </g>
+</svg>

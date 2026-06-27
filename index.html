@@ -72,6 +72,10 @@
                             class="flex-1 py-1.5 text-xs font-semibold rounded-xl transition-all text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200">
                             Album
                         </button>
+                        <button id="tabPlaylist"
+                            class="flex-1 py-1.5 text-xs font-semibold rounded-xl transition-all text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200">
+                            Playlist
+                        </button>
                     </div>
 
                     <!-- Track section -->
@@ -194,6 +198,36 @@
                                         class="inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform duration-200"></span>
                                 </button>
                             </div>
+                        </div>
+                    </div>
+
+                    <!-- Playlist section -->
+                    <div id="playlistSection" class="hidden space-y-4">
+                        <div class="space-y-1.5">
+                            <label for="playlistMusicURL"
+                                class="block text-xs font-semibold tracking-wider text-gray-500 dark:text-gray-400">
+                                Apple Music Playlist URL
+                            </label>
+                            <input type="url" id="playlistMusicURL" autocomplete="off"
+                                placeholder="https://music.apple.com/jp/playlist/.../pl.xxxxxxxx"
+                                class="w-full px-4 py-2.5 bg-white dark:bg-gray-900 border-0 rounded-xl focus:ring-2 focus:ring-primary-400 outline-none dark:text-white placeholder-gray-400 shadow-sm transition-all text-sm">
+                            <p id="playlistLookupStatus" class="text-xs hidden"></p>
+                        </div>
+                        <div class="space-y-1.5">
+                            <div class="flex items-center justify-between">
+                                <label for="playlistDesc"
+                                    class="block text-xs font-semibold tracking-wider text-gray-500 dark:text-gray-400">
+                                    説明文
+                                </label>
+                                <button type="button" id="playlistDescFetch"
+                                    class="px-2.5 py-1 text-xs font-semibold rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors">
+                                    自動取得
+                                </button>
+                            </div>
+                            <textarea id="playlistDesc" rows="2" autocomplete="off"
+                                placeholder="プレイリストの説明（改行で最大2行まで表示）"
+                                class="w-full px-4 py-2.5 bg-white dark:bg-gray-900 border-0 rounded-xl focus:ring-2 focus:ring-primary-400 outline-none dark:text-white placeholder-gray-400 shadow-sm transition-all text-sm resize-none"></textarea>
+                            <p class="text-xs text-gray-400 dark:text-gray-500">URL入力時に自動取得します。編集・改行可。空にすると非表示。</p>
                         </div>
                     </div>
 

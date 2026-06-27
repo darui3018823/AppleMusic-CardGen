@@ -22,7 +22,7 @@ Every card endpoint accepts `theme`. Any value other than `light` is treated as
 
 | Endpoint | `Cache-Control` |
 |---|---|
-| `/api/card`, `/api/album` | `public, max-age=3600` |
+| `/api/card`, `/api/album`, `/api/playlist` | `public, max-age=3600` |
 | `/api/lookup` | _(none)_ |
 | `/api/open` | `no-store` |
 
@@ -39,9 +39,10 @@ Errors are returned as `text/plain` with an appropriate status code:
 | `404 Not Found` | The requested album/track does not exist upstream |
 | `502 Bad Gateway` | An upstream request (iTunes API / artwork) failed |
 
-> Note: For `/api/card` and `/api/album`, a failure to fetch the **artwork**
-> specifically is **not** fatal — the card is still rendered (HTTP `200`) with a
-> placeholder in place of the image.
+> Note: For `/api/card`, `/api/album`, and `/api/playlist`, a failure to fetch
+> the **artwork** specifically is **not** fatal — the card is still rendered
+> (HTTP `200`) with a placeholder in place of the image. `/api/playlist` also
+> degrades to a placeholder card if the playlist page itself cannot be scraped.
 
 ---
 
@@ -122,6 +123,53 @@ https://music.apple.com/jp/album/alxd/1440785663
 
 ```markdown
 [![ALXD](https://amcg.daruks.com/api/album?id=1440785663&theme=dark&country=jp)](https://amcg.daruks.com/api/open?url=https%3A%2F%2Fmusic.apple.com%2Fjp%2Falbum%2Falxd%2F1440785663)
+```
+
+---
+
+## `GET /api/playlist`
+
+Render a **playlist** card as SVG (600 px wide; height computed from the number
+of listed tracks). Unlike albums, playlist data is **not** available from the
+iTunes API, so the playlist's `music.apple.com` page is scraped (its embedded
+`serialized-server-data` JSON). Results are cached in memory.
+
+### Parameters
+
+| Parameter | Required | Default | Description |
+|---|---|---|---|
+| `id` | ✅¹ | — | Playlist id, e.g. `pl.d25f5d1181894928af76c85c967f8f31` |
+| `url` | ✅¹ | — | A `music.apple.com/…/playlist/…/{id}` URL (used to derive `id` and storefront when `id` is omitted) |
+| `country` | — | `us` | Two lowercase letters (ISO storefront), e.g. `jp`. Invalid values fall back to `us` |
+| `theme` | — | `dark` | `dark` or `light` |
+| `badge` | — | `1` | `0` hides the "Listen on Apple Music" badge |
+| `desc` | — | _(scraped)_ | Overrides the description. Honors up to two lines (split on `\n`, else word-wrapped). Pass an empty value to hide the description |
+| `format` | — | — | `json` returns metadata (`name`, `curator`, `updated`, `trackCount`, `description`) instead of SVG — used by the web UI to pre-fill the editable description |
+
+¹ Supply either `id`, or a `url` to derive it from. `id` takes precedence.
+
+- `400` if neither a valid `id` (`pl.*`) nor a parseable `url` is given.
+- Up to 7 tracks are listed; the rest are summarized as "他N曲…".
+- If the page cannot be scraped, a placeholder card is rendered (HTTP `200`)
+  and the error is logged.
+
+### Finding the ID
+
+```
+https://music.apple.com/us/playlist/top-100-global/pl.d25f5d1181894928af76c85c967f8f31
+                                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                                                    this is the id (starts with pl.)
+```
+
+### Response
+
+- `image/svg+xml; charset=utf-8`, or
+- `application/json; charset=utf-8` when `format=json`.
+
+### Example
+
+```markdown
+[![Playlist](https://amcg.daruks.com/api/playlist?id=pl.d25f5d1181894928af76c85c967f8f31&country=us&theme=dark)](https://amcg.daruks.com/api/open?url=https%3A%2F%2Fmusic.apple.com%2Fus%2Fplaylist%2Ftop-100-global%2Fpl.d25f5d1181894928af76c85c967f8f31)
 ```
 
 ---
