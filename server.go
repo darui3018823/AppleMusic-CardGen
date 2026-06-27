@@ -173,6 +173,7 @@ type AlbumCardData struct {
 	HintColor      string
 	ShowBadge      bool
 	SVGHeight      int
+	DividerY2      int // bottom of the vertical column divider (SVGHeight - 16)
 }
 
 func truncate(s string, max int) string {
@@ -227,8 +228,8 @@ const albumSvgTmplSrc = `<?xml version="1.0" encoding="UTF-8"?>
       <rect x="16" y="16" width="150" height="150" rx="12"/>
     </clipPath>
   </defs>
-  <rect width="600" height="280" rx="14" fill="{{.BgColor}}"/>
-  <line x1="184" y1="16" x2="184" y2="264" stroke="{{.DividerColor}}" stroke-width="0.5"/>
+  <rect width="600" height="{{.SVGHeight}}" rx="14" fill="{{.BgColor}}"/>
+  <line x1="184" y1="16" x2="184" y2="{{.DividerY2}}" stroke="{{.DividerColor}}" stroke-width="0.5"/>
   {{if .ArtworkBase64 -}}
   <image href="data:image/jpeg;base64,{{.ArtworkBase64}}" x="16" y="16" width="150" height="150" clip-path="url(#clip)" preserveAspectRatio="xMidYMid slice"/>
   {{- else -}}
@@ -600,6 +601,7 @@ func handleAlbum(w http.ResponseWriter, r *http.Request) {
 		ShowBadge:      showBadge,
 		SVGHeight:      albumSVGHeight(rows, remaining, showBadge),
 	}
+	data.DividerY2 = data.SVGHeight - 16
 	setAlbumColors(&data, theme)
 
 	w.Header().Set("Content-Type", "image/svg+xml; charset=utf-8")
@@ -1251,6 +1253,7 @@ func renderPlaylistClassic(w http.ResponseWriter, pl *PlaylistData, meta, artwor
 		ShowBadge:      showBadge,
 		SVGHeight:      albumSVGHeight(rows, remaining, showBadge),
 	}
+	data.DividerY2 = data.SVGHeight - 16
 	setAlbumColors(&data, theme)
 
 	w.Header().Set("Content-Type", "image/svg+xml; charset=utf-8")
