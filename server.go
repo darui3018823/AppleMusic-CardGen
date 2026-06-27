@@ -40,6 +40,10 @@ type CardData struct {
 	ShowBadge     bool
 }
 
+// appleUserAgent is the browser-like UA used for all requests to Apple hosts
+// (page scraping and mzstatic artwork). A real UA avoids sporadic 403s.
+const appleUserAgent = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15"
+
 const svgTmplSrc = `<?xml version="1.0" encoding="UTF-8"?>
 <svg viewBox="0 0 520 130" width="520" height="130" xmlns="http://www.w3.org/2000/svg">
   <defs>
@@ -405,7 +409,7 @@ func fetchAppleMusicPageTitle(id, country string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	req.Header.Set("User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15")
+	req.Header.Set("User-Agent", appleUserAgent)
 	req.Header.Set("Accept-Language", "ja,en-US;q=0.9,en;q=0.8")
 	resp, err := client.Do(req)
 	if err != nil {
@@ -968,7 +972,7 @@ func fetchPlaylistData(id, country string) (*PlaylistData, error) {
 	if err != nil {
 		return nil, err
 	}
-	req.Header.Set("User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15")
+	req.Header.Set("User-Agent", appleUserAgent)
 	req.Header.Set("Accept-Language", "ja,en-US;q=0.9,en;q=0.8")
 	resp, err := client.Do(req)
 	if err != nil {
@@ -1264,20 +1268,9 @@ func fetchArtwork(rawURL string) (string, error) {
 		return "", fmt.Errorf("artwork URL must be from mzstatic.com, got: %s", host)
 	}
 
-	client := &http.Client{Timeout: 5 * time.Second}
-	resp, err := client.Get(rawURL)
+	body, err := downloadArtwork(rawURL)
 	if err != nil {
-		return "", fmt.Errorf("download failed: %w", err)
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		return "", fmt.Errorf("download failed: HTTP %s", resp.Status)
-	}
-
-	body, err := io.ReadAll(io.LimitReader(resp.Body, 10<<20))
-	if err != nil {
-		return "", fmt.Errorf("read failed: %w", err)
+		return "", err
 	}
 
 	src, _, err := image.Decode(bytes.NewReader(body))
@@ -1296,6 +1289,52 @@ func fetchArtwork(rawURL string) (string, error) {
 	encoded := base64.StdEncoding.EncodeToString(buf.Bytes())
 	artworkCache.Store(rawURL, encoded)
 	return encoded, nil
+}
+
+// downloadArtwork GETs the artwork bytes with a browser-like UA, Accept and
+// Referer so mzstatic does not reject the request. Editorial playlist covers
+// (e.g. the /Features path) intermittently return 403/429 under load, so a
+// single retry with a short backoff is attempted on transient statuses.
+func downloadArtwork(rawURL string) ([]byte, error) {
+	client := &http.Client{Timeout: 5 * time.Second}
+	var lastErr error
+	for attempt := range 2 {
+		if attempt > 0 {
+			time.Sleep(300 * time.Millisecond)
+		}
+		req, err := http.NewRequest(http.MethodGet, rawURL, nil)
+		if err != nil {
+			return nil, fmt.Errorf("invalid request: %w", err)
+		}
+		req.Header.Set("User-Agent", appleUserAgent)
+		req.Header.Set("Accept", "image/jpeg,image/png,image/*;q=0.8,*/*;q=0.5")
+		req.Header.Set("Referer", "https://music.apple.com/")
+
+		resp, err := client.Do(req)
+		if err != nil {
+			lastErr = fmt.Errorf("download failed: %w", err)
+			continue
+		}
+		switch {
+		case resp.StatusCode == http.StatusOK:
+			body, err := io.ReadAll(io.LimitReader(resp.Body, 10<<20))
+			resp.Body.Close()
+			if err != nil {
+				return nil, fmt.Errorf("read failed: %w", err)
+			}
+			return body, nil
+		case resp.StatusCode == http.StatusForbidden,
+			resp.StatusCode == http.StatusTooManyRequests,
+			resp.StatusCode >= 500:
+			resp.Body.Close()
+			lastErr = fmt.Errorf("download failed: HTTP %s", resp.Status)
+			// retry transient status
+		default:
+			resp.Body.Close()
+			return nil, fmt.Errorf("download failed: HTTP %s", resp.Status)
+		}
+	}
+	return nil, lastErr
 }
 
 func handleLookup(w http.ResponseWriter, r *http.Request) {
