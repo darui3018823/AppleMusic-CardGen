@@ -1,10 +1,14 @@
 <table>
     <tr>
         <td colspan="2" Align="center">
-            <img src="https://amcg.daruks.com/api/album?id=1564649242&theme=dark&badge=0&country=jp&suffix=1" alt="ALXD">
+            <a href="https://amcg.daruks.com/api/open?id=1896397416&amp;s=us">
+                <img src="https://amcg.daruks.com/api/album?id=1896397416&amp;theme=dark&amp;badge=0&amp;country=us&amp;suffix=1" alt="Album">
+            </a>
         </td>
         <td>
-            <img src="https://amcg.daruks.com/api/album?id=1564649242&theme=light&badge=0&country=jp&suffix=1" alt="ALXD">
+            <a href="https://amcg.daruks.com/api/open?id=1896397416&amp;s=us">
+                <img src="https://amcg.daruks.com/api/album?id=1896397416&amp;theme=light&amp;badge=0&amp;country=us&amp;suffix=1" alt="Album">
+            </a>
         </td>
     </tr>
     <tr>
