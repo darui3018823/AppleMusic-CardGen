@@ -1,6 +1,6 @@
 # Apple Music Card Generator
 
-Generate SVG card images from Apple Music tracks and albums — embed them in Markdown, READMEs, or profile pages.
+Generate SVG card images from Apple Music tracks, albums, and playlists — embed them in Markdown, READMEs, or profile pages.
 
 <table>
   <tr>
@@ -19,6 +19,14 @@ Generate SVG card images from Apple Music tracks and albums — embed them in Ma
       <img src="https://amcg.daruks.com/api/album?id=1655059835&theme=light" alt="Counterfeit">
     </td>
   </tr>
+  <tr>
+    <td colspan="2" align="center">
+      <img src="https://amcg.daruks.com/api/playlist?id=pl.d25f5d1181894928af76c85c967f8f31&country=us&theme=dark" alt="Top 100: Global">
+    </td>
+    <td>
+      <img src="https://amcg.daruks.com/api/playlist?id=pl.d25f5d1181894928af76c85c967f8f31&country=us&theme=light" alt="Top 100: Global">
+    </td>
+  </tr>
 </table>
 
 > **Japanese** — [日本語版はこちら](./japanese/README.md)
@@ -29,6 +37,7 @@ Generate SVG card images from Apple Music tracks and albums — embed them in Ma
 
 - **Track card** — 520×130px SVG with track name, artist, album, and artwork
 - **Album card** — 600×280px SVG with album art, tracklist (up to 7 tracks), genre, and duration
+- **Playlist card** — 600px-wide SVG with cover, curator, description, and tracklist. Two layouts (New / Classic) and a selectable track count
 - Dark / Light theme support
 - Artwork and metadata fetched automatically from the iTunes Search API
 - Artwork embedded as Base64 — no external requests from the viewer's browser
@@ -90,12 +99,39 @@ https://music.apple.com/jp/album/alxd/1440785663
 
 ---
 
+### Playlist card
+
+```
+GET /api/playlist
+```
+
+Playlist data is scraped from the playlist's `music.apple.com` page (the iTunes
+API does not cover playlists).
+
+| Parameter | Required | Description |
+|---|---|---|
+| `id` | ✅¹ | Playlist id (`pl.*`), the part at the end of the Apple Music playlist URL |
+| `url` | ✅¹ | A `music.apple.com/…/playlist/…/{id}` URL (derives `id` + storefront) |
+| `theme` | — | `dark` (default) or `light` |
+| `ui` | — | `classic` renders with the album-card layout instead of the wide New list |
+| `limit` | — | Number of tracks to list in the New layout (default 7; `all` for every track) |
+
+¹ Supply either `id` or a `url`. See [docs/API.md](./docs/API.md) for `country`, `badge`, `desc`.
+
+**Example:**
+```markdown
+[![Playlist](https://amcg.daruks.com/api/playlist?id=pl.d25f5d1181894928af76c85c967f8f31&country=us&theme=dark)](https://music.apple.com/us/playlist/top-100-global/pl.d25f5d1181894928af76c85c967f8f31)
+```
+
+---
+
 ## Web UI
 
 Visit `https://amcg.daruks.com` to generate cards interactively.
 
 - **Track tab** — paste an Apple Music track URL (with `?i=`) to auto-fill all fields via the iTunes API
 - **Album tab** — paste an Apple Music album URL to detect the ID and preview instantly
+- **Playlist tab** — paste an Apple Music playlist URL to scrape it; toggle New / Classic layout and the track count
 
 ---
 
@@ -132,7 +168,7 @@ PORT=3000 go run server.go
 
 - **Backend** — Go (stdlib + `golang.org/x/image`)
 - **Frontend** — Vanilla JS + Tailwind CSS v4
-- **Data source** — [iTunes Search API](https://developer.apple.com/library/archive/documentation/AudioVideo/Conceptual/iTuneSearchAPI/)
+- **Data source** — [iTunes Search API](https://developer.apple.com/library/archive/documentation/AudioVideo/Conceptual/iTuneSearchAPI/) (tracks / albums); `music.apple.com` page scraping (playlists)
 
 ---
 
