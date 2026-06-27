@@ -8,7 +8,7 @@ Generate SVG card images from Apple Music tracks, albums, and playlists — embe
       <img src="https://amcg.daruks.com/api/card?title=Never+Gonna+Give+You+Up+%282022+Remaster%29&artist=Rick+Astley&album=Whenever+You+Need+Somebody+%282022+Remaster%29&artwork=https%3A%2F%2Fis1-ssl.mzstatic.com%2Fimage%2Fthumb%2FMusic122%2Fv4%2Fde%2Feb%2F63%2Fdeeb63c1-7bc0-9153-cfa3-fd9e4929aacf%2F4050538826562.jpg%2F600x600bb.jpg&year=1987&dur=3%3A33&theme=dark" alt="Never Gonna Give You Up">
     </td>
     <td>
-      <img src="https://amcg.daruks.com/api/card?title=Never+Gonna+Give+You+Up+%282022+Remaster%29&artist=Rick+Astley&album=Whenever+You+Need+Somebody+%282022+Remaster%29&artwork=https%3A%2F%2Fis1-ssl.mzstatic.com%2Fimage%2Fthumb%2FMusic122%2Fv4%2Fde%2Feb%2F63%2Fdeeb63c1-7bc0-9153-cfa3-fd9e4929aacf%2F4050538826562.jpg%2F600x600bb.jpg&year=1987&dur=3%3A33&theme=light" alt="Never Gonna Give You Up">
+      <img src="https://amcg.daruks.com/api/card?title=Never+Gonna+Give+You+Up+%282022+Remaster%29&artist=Rick+Astley&album=Whenever+You+Need+Somebody+%282022+Remaster%29&artwork=https%3A%2F%2Fis1-ssl.mzstatic.com%2Fimage%2Fthumb%2FMusic122%2Fv4%2Fde%2Feb%2F63%2Fdeeb63c1-7bc0-9153-cfa3-fd9e4929aacf%2F4050538826562.jpg%2F600x600bb.jpg&year=1987&dur=3%3A33&theme=light&badge=0" alt="Never Gonna Give You Up">
     </td>
   </tr>
   <tr>
@@ -16,7 +16,7 @@ Generate SVG card images from Apple Music tracks, albums, and playlists — embe
       <img src="https://amcg.daruks.com/api/album?id=1655059835&theme=dark" alt="Counterfeit">
     </td>
     <td>
-      <img src="https://amcg.daruks.com/api/album?id=1655059835&theme=light" alt="Counterfeit">
+      <img src="https://amcg.daruks.com/api/album?id=1655059835&theme=light&badge=0" alt="Counterfeit">
     </td>
   </tr>
   <tr>
@@ -24,7 +24,7 @@ Generate SVG card images from Apple Music tracks, albums, and playlists — embe
       <img src="https://amcg.daruks.com/api/playlist?id=pl.d25f5d1181894928af76c85c967f8f31&country=us&theme=dark" alt="Top 100: Global">
     </td>
     <td>
-      <img src="https://amcg.daruks.com/api/playlist?id=pl.d25f5d1181894928af76c85c967f8f31&country=us&theme=light" alt="Top 100: Global">
+      <img src="https://amcg.daruks.com/api/playlist?id=pl.d25f5d1181894928af76c85c967f8f31&country=us&theme=light&badge=0" alt="Top 100: Global">
     </td>
   </tr>
 </table>
