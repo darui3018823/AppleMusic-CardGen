@@ -22,10 +22,10 @@ Markdown や HTML に埋め込むことで、README やプロフィールペー�
   </tr>
   <tr>
     <td colspan="2" align="center">
-      <img src="https://amcg.daruks.com/api/playlist?id=pl.d25f5d1181894928af76c85c967f8f31&country=jp&theme=dark" alt="Top 100: Global">
+      <img src="https://amcg.daruks.com/api/playlist?id=pl.043a2c9876114d95a4659988497567be&country=jp&theme=dark" alt="Top 100: Japan">
     </td>
     <td>
-      <img src="https://amcg.daruks.com/api/playlist?id=pl.d25f5d1181894928af76c85c967f8f31&country=jp&theme=light&badge=0" alt="Top 100: Global">
+      <img src="https://amcg.daruks.com/api/playlist?id=pl.043a2c9876114d95a4659988497567be&country=jp&theme=light&badge=0" alt="Top 100: Japan">
     </td>
   </tr>
 </table>
