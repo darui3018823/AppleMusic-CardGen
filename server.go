@@ -709,9 +709,9 @@ type PlaylistData struct {
 }
 
 const (
-	playlistFirstTrackY = 158
-	playlistLineSpacing = 20
-	playlistSepOffset   = 12
+	playlistFirstTrackY = 160
+	playlistLineSpacing = 22
+	playlistSepOffset   = 5
 	playlistMaxDisplay  = 7
 )
 
