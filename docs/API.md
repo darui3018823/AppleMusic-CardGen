@@ -143,14 +143,16 @@ iTunes API, so the playlist's `music.apple.com` page is scraped (its embedded
 | `country` | — | `us` | Two lowercase letters (ISO storefront), e.g. `jp`. Invalid values fall back to `us` |
 | `theme` | — | `dark` | `dark` or `light` |
 | `badge` | — | `1` | `0` hides the "Listen on Apple Music" badge |
-| `ui` | — | _(New)_ | `classic` renders with the album-card layout (left artwork + a single number/title/time column). `desc` is ignored |
+| `ui` | — | _(New)_ | `classic` renders with the album-card layout (left artwork + a single number/title/time column). `desc` and `limit` are ignored |
+| `limit` | — | `7` | Number of tracks to list (New layout only). `all` lists every scraped track; values are clamped to the scraped count; invalid/≤0 falls back to `7` |
 | `desc` | — | _(scraped)_ | Overrides the description. Honors up to two lines (split on `\n`, else word-wrapped). Pass an empty value to hide the description. Ignored when `ui=classic` |
 | `format` | — | — | `json` returns metadata (`name`, `curator`, `updated`, `trackCount`, `description`) instead of SVG — used by the web UI to pre-fill the editable description |
 
 ¹ Supply either `id`, or a `url` to derive it from. `id` takes precedence.
 
 - `400` if neither a valid `id` (`pl.*`) nor a parseable `url` is given.
-- Up to 7 tracks are listed; the rest are summarized as "他N曲…".
+- The New layout lists `limit` tracks (default 7); the rest are summarized as
+  "他N曲…". The Classic layout always lists up to 7.
 - If the page cannot be scraped, a placeholder card is rendered (HTTP `200`)
   and the error is logged.
 

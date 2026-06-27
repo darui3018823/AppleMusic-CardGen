@@ -18,6 +18,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"strconv"
 	"strings"
 	"sync"
 	"text/template"
@@ -1131,9 +1132,19 @@ func handlePlaylist(w http.ResponseWriter, r *http.Request) {
 		descLines[i] = html.EscapeString(descLines[i])
 	}
 
+	// ?limit selects how many tracks to list (default 7, "all" = every scraped
+	// track). Out-of-range or invalid values fall back to the default.
+	limit := playlistMaxDisplay
+	if v := q.Get("limit"); v != "" {
+		if v == "all" {
+			limit = len(pl.Tracks)
+		} else if n, err := strconv.Atoi(v); err == nil && n > 0 {
+			limit = n
+		}
+	}
 	display := pl.Tracks
-	if len(display) > playlistMaxDisplay {
-		display = display[:playlistMaxDisplay]
+	if len(display) > limit {
+		display = display[:limit]
 	}
 	var rows []PlaylistTrack
 	for i, t := range display {

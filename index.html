@@ -244,6 +244,17 @@
                                 </button>
                             </div>
                         </div>
+                        <!-- Track count (New layout only) -->
+                        <div id="playlistLimitRow"
+                            class="flex items-center justify-between bg-gray-50 dark:bg-gray-900/40 rounded-2xl px-4 py-3">
+                            <span class="text-xs font-semibold tracking-wider text-gray-500 dark:text-gray-400">表示曲数</span>
+                            <div class="flex items-center gap-2">
+                                <input type="number" id="playlistLimit" min="1" step="1" value="7"
+                                    class="w-20 px-3 py-1.5 bg-white dark:bg-gray-900 border-0 rounded-lg focus:ring-2 focus:ring-primary-400 outline-none dark:text-white text-sm text-right shadow-sm">
+                                <button type="button" id="playlistLimitAll"
+                                    class="px-2.5 py-1.5 text-xs font-semibold rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors">全曲</button>
+                            </div>
+                        </div>
                     </div>
 
                     <!-- Card theme toggle (shared) -->

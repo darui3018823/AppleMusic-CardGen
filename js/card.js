@@ -232,9 +232,15 @@ document.addEventListener('DOMContentLoaded', () => {
     const playlistUIToggle      = document.getElementById('playlistUIToggle');
     const playlistUIToggleThumb = document.getElementById('playlistUIToggleThumb');
     const playlistUILabel       = document.getElementById('playlistUILabel');
+    const playlistLimitRow      = document.getElementById('playlistLimitRow');
+    const playlistLimitInput    = document.getElementById('playlistLimit');
+    const playlistLimitAll      = document.getElementById('playlistLimitAll');
 
     // Classic = album-style layout (?ui=classic); New (default) = wide list.
     let playlistClassic = localStorage.getItem('playlistClassic') === 'true';
+    // Total track count from the scraped metadata (0 until fetched).
+    let playlistTrackCount = 0;
+    playlistLimitInput.value = localStorage.getItem('playlistLimit') || '7';
 
     function setPlaylistStatus(msg, color) {
         playlistLookupStatus.textContent = msg;
@@ -264,7 +270,12 @@ document.addEventListener('DOMContentLoaded', () => {
         });
         // Always send desc so user edits (and clearing it) take effect.
         p.set('desc', playlistDesc.value);
-        if (playlistClassic) p.set('ui', 'classic');
+        if (playlistClassic) {
+            p.set('ui', 'classic'); // Classic ignores the track-count limit
+        } else {
+            const lim = parseInt(playlistLimitInput.value, 10);
+            if (lim > 0) p.set('limit', String(lim));
+        }
         return p.toString();
     }
 
@@ -299,6 +310,8 @@ document.addEventListener('DOMContentLoaded', () => {
             const resp = await fetch(`/api/playlist?id=${playlistId}&country=${playlistCountry}&format=json`);
             const data = await resp.json();
             playlistDesc.value = data.description || '';
+            playlistTrackCount = data.trackCount || 0;
+            if (playlistTrackCount > 0) playlistLimitInput.max = String(playlistTrackCount);
             setPlaylistStatus(`取得しました: ${data.name || playlistId}`, 'text-green-600 dark:text-green-400');
         } catch {
             setPlaylistStatus('情報の取得に失敗しました。', 'text-red-500 dark:text-red-400');
@@ -532,12 +545,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
     applySuffixToggleUI();
 
-    // Playlist layout toggle (playlist only): off = New, on = Classic
+    // Playlist layout toggle (playlist only): off = New, on = Classic.
+    // The track-count row only affects New, so it is disabled in Classic.
     function applyPlaylistUIToggle() {
         playlistUIToggle.setAttribute('aria-checked', String(playlistClassic));
         playlistUIToggleThumb.style.transform = playlistClassic ? 'translateX(1.25rem)' : 'translateX(0.25rem)';
         playlistUIToggle.style.backgroundColor = playlistClassic ? '#f43f5e' : '#4b5563';
         playlistUILabel.textContent = playlistClassic ? 'Classic' : 'New';
+        playlistLimitRow.classList.toggle('opacity-40', playlistClassic);
+        playlistLimitInput.disabled = playlistClassic;
+        playlistLimitAll.disabled = playlistClassic;
     }
 
     playlistUIToggle.addEventListener('click', () => {
@@ -548,6 +565,26 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     applyPlaylistUIToggle();
+
+    // Track-count input (New layout only)
+    playlistLimitInput.addEventListener('input', debounce(() => {
+        let n = parseInt(playlistLimitInput.value, 10);
+        if (!(n > 0)) return; // ignore empty / invalid mid-edit
+        if (playlistTrackCount > 0 && n > playlistTrackCount) {
+            n = playlistTrackCount;
+            playlistLimitInput.value = String(n);
+        }
+        localStorage.setItem('playlistLimit', String(n));
+        updatePlaylistPreview();
+    }, 400));
+
+    playlistLimitAll.addEventListener('click', () => {
+        if (playlistClassic) return;
+        const n = playlistTrackCount > 0 ? playlistTrackCount : 100;
+        playlistLimitInput.value = String(n);
+        localStorage.setItem('playlistLimit', String(n));
+        updatePlaylistPreview();
+    });
 
     // Card theme toggle — initialize
     toggleThumb.style.transform = 'translateX(1.25rem)';
