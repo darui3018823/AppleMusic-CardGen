@@ -145,8 +145,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Wrap a music.apple.com link in our /api/open redirector so it tries the
     // itms:// app deep link first and falls back to the web. Non-Apple-Music
-    // links are returned unchanged. Numeric album/song links use the compact
-    // ?id=&s= form; anything else falls back to the full ?url= encoding.
+    // links are returned unchanged. Numeric album/song and pl.* playlist links
+    // use the compact ?id=&s= form; anything else falls back to the full ?url=.
     function openURL(link) {
         let u;
         try {
@@ -155,10 +155,14 @@ document.addEventListener('DOMContentLoaded', () => {
         } catch { return link; }
 
         const parts = u.pathname.split('/').filter(Boolean);
-        const ki = parts.findIndex(p => p === 'album' || p === 'song' || p === 'music-video');
+        const ki = parts.findIndex(p => p === 'album' || p === 'song' || p === 'music-video' || p === 'playlist');
         const storefront = ki >= 1 ? parts[ki - 1] : 'us';
         const kind = ki >= 0 ? parts[ki] : '';
         const id = ki >= 0 ? parts[parts.length - 1] : '';
+        if (/^[a-z]{2}$/.test(storefront) && kind === 'playlist' && /^pl\.[A-Za-z0-9._-]+$/.test(id)) {
+            const p = new URLSearchParams({ id, s: storefront, kind: 'playlist' });
+            return `${window.location.origin}/api/open?${p.toString()}`;
+        }
         if (/^[a-z]{2}$/.test(storefront) && /^\d+$/.test(id)) {
             const p = new URLSearchParams({ id, s: storefront });
             if (kind !== 'album') p.set('kind', kind);
@@ -225,6 +229,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const playlistLookupStatus  = document.getElementById('playlistLookupStatus');
     const playlistDesc          = document.getElementById('playlistDesc');
     const playlistDescFetch     = document.getElementById('playlistDescFetch');
+    const playlistUIToggle      = document.getElementById('playlistUIToggle');
+    const playlistUIToggleThumb = document.getElementById('playlistUIToggleThumb');
+    const playlistUILabel       = document.getElementById('playlistUILabel');
+
+    // Classic = album-style layout (?ui=classic); New (default) = wide list.
+    let playlistClassic = localStorage.getItem('playlistClassic') === 'true';
 
     function setPlaylistStatus(msg, color) {
         playlistLookupStatus.textContent = msg;
@@ -254,6 +264,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
         // Always send desc so user edits (and clearing it) take effect.
         p.set('desc', playlistDesc.value);
+        if (playlistClassic) p.set('ui', 'classic');
         return p.toString();
     }
 
@@ -520,6 +531,23 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     applySuffixToggleUI();
+
+    // Playlist layout toggle (playlist only): off = New, on = Classic
+    function applyPlaylistUIToggle() {
+        playlistUIToggle.setAttribute('aria-checked', String(playlistClassic));
+        playlistUIToggleThumb.style.transform = playlistClassic ? 'translateX(1.25rem)' : 'translateX(0.25rem)';
+        playlistUIToggle.style.backgroundColor = playlistClassic ? '#f43f5e' : '#4b5563';
+        playlistUILabel.textContent = playlistClassic ? 'Classic' : 'New';
+    }
+
+    playlistUIToggle.addEventListener('click', () => {
+        playlistClassic = !playlistClassic;
+        localStorage.setItem('playlistClassic', String(playlistClassic));
+        applyPlaylistUIToggle();
+        updatePlaylistPreview();
+    });
+
+    applyPlaylistUIToggle();
 
     // Card theme toggle — initialize
     toggleThumb.style.transform = 'translateX(1.25rem)';

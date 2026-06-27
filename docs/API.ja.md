@@ -142,7 +142,8 @@ https://music.apple.com/jp/album/alxd/1440785663
 | `country` | — | `us` | 小文字2文字のストアフロント（例: `jp`）。不正値は `us` にフォールバック |
 | `theme` | — | `dark` | `dark` または `light` |
 | `badge` | — | `1` | `0` で「Listen on Apple Music」バッジを非表示 |
-| `desc` | — | _(スクレイプ値)_ | 説明文を上書き。最大2行（`\n` で分割、なければ自動折り返し）。空値で説明を非表示 |
+| `ui` | — | _(New)_ | `classic` でアルバムカードと同じレイアウト（左にアートワーク＋「番号・曲名・時間」の1カラム）で描画。`desc` は無視 |
+| `desc` | — | _(スクレイプ値)_ | 説明文を上書き。最大2行（`\n` で分割、なければ自動折り返し）。空値で説明を非表示。`ui=classic` 時は無視 |
 | `format` | — | — | `json` で SVG の代わりにメタ情報（`name`, `curator`, `updated`, `trackCount`, `description`）を返す。Web UI が編集用の説明文を先読みするために使用 |
 
 ¹ `id`、または導出元の `url` のいずれかを指定。`id` を優先。
@@ -233,9 +234,9 @@ Apple Music アプリを Web サイトより優先できます。
 | パラメータ | 必須 | 説明 |
 |---|---|---|
 | `url` | ✅¹ | `https://music.apple.com/…` の URL（パーセントエンコード） |
-| `id` | ✅¹ | アルバム / 曲 / ミュージックビデオの数値 ID |
+| `id` | ✅¹ | アルバム / 曲 / ミュージックビデオの数値 ID、または `kind=playlist` 時はプレイリスト id（`pl.*`） |
 | `s` | ✅¹ | 2文字のストアフロント（例: `jp`, `us`。別名: `country`） |
-| `kind` | — | `album`（既定）, `song`, `music-video` |
+| `kind` | — | `album`（既定）, `song`, `music-video`, `playlist` |
 | `i` | — | アルバム内のトラック数値 ID（`?i=…` になる） |
 
 ¹ `url`、または `id` と `s` の両方のいずれかを指定。両方ある場合は `url` を優先。
@@ -253,6 +254,9 @@ GET /api/open?id=1896397416&s=jp
 
 # トラック ID 付きのコンパクト
 GET /api/open?id=1574378620&s=us&i=1574378625
+
+# プレイリスト（コンパクト）
+GET /api/open?id=pl.u-kv9lb8dtJKqA74d&s=jp&kind=playlist
 
 # フル URL（引き続きサポート）
 GET /api/open?url=https%3A%2F%2Fmusic.apple.com%2Falbum%2Fstay%2F1574378620%3Fi%3D1574378625

@@ -143,7 +143,8 @@ iTunes API, so the playlist's `music.apple.com` page is scraped (its embedded
 | `country` | — | `us` | Two lowercase letters (ISO storefront), e.g. `jp`. Invalid values fall back to `us` |
 | `theme` | — | `dark` | `dark` or `light` |
 | `badge` | — | `1` | `0` hides the "Listen on Apple Music" badge |
-| `desc` | — | _(scraped)_ | Overrides the description. Honors up to two lines (split on `\n`, else word-wrapped). Pass an empty value to hide the description |
+| `ui` | — | _(New)_ | `classic` renders with the album-card layout (left artwork + a single number/title/time column). `desc` is ignored |
+| `desc` | — | _(scraped)_ | Overrides the description. Honors up to two lines (split on `\n`, else word-wrapped). Pass an empty value to hide the description. Ignored when `ui=classic` |
 | `format` | — | — | `json` returns metadata (`name`, `curator`, `updated`, `trackCount`, `description`) instead of SVG — used by the web UI to pre-fill the editable description |
 
 ¹ Supply either `id`, or a `url` to derive it from. `id` takes precedence.
@@ -236,9 +237,9 @@ Provide **either** `url`, **or** the compact `id` + `s` pair.
 | Parameter | Required | Description |
 |---|---|---|
 | `url` | ✅¹ | An `https://music.apple.com/…` URL (percent-encoded) |
-| `id` | ✅¹ | Numeric album / song / music-video id |
+| `id` | ✅¹ | Numeric album / song / music-video id, or a `pl.*` playlist id when `kind=playlist` |
 | `s` | ✅¹ | Two-letter storefront, e.g. `jp`, `us` (alias: `country`) |
-| `kind` | — | `album` (default), `song`, or `music-video` |
+| `kind` | — | `album` (default), `song`, `music-video`, or `playlist` |
 | `i` | — | Numeric track id within an album (becomes `?i=…`) |
 
 ¹ Supply either `url`, or both `id` and `s`. `url` takes precedence if present.
@@ -256,6 +257,9 @@ GET /api/open?id=1896397416&s=jp
 
 # Compact with a track id
 GET /api/open?id=1574378620&s=us&i=1574378625
+
+# Playlist (compact)
+GET /api/open?id=pl.u-kv9lb8dtJKqA74d&s=jp&kind=playlist
 
 # Full URL (still supported)
 GET /api/open?url=https%3A%2F%2Fmusic.apple.com%2Falbum%2Fstay%2F1574378620%3Fi%3D1574378625

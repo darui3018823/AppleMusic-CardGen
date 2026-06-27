@@ -585,21 +585,6 @@ func handleAlbum(w http.ResponseWriter, r *http.Request) {
 		albumName = stripAlbumTypeSuffix(albumName)
 	}
 
-	// Compute SVG height: with badge always 280; without badge, fit to content.
-	svgHeight := 280
-	if !showBadge {
-		svgHeight = 229 // min: artwork/meta area bottom
-		if len(rows) > 0 {
-			last := rows[len(rows)-1]
-			if last.LineY+16 > svgHeight {
-				svgHeight = last.LineY + 16
-			}
-		}
-		if remaining > 0 && 264 > svgHeight {
-			svgHeight = 264 // remaining count at y=248 + 16px padding
-		}
-	}
-
 	data := AlbumCardData{
 		AlbumName:      html.EscapeString(truncateByPixels(albumName, 168, 13)),
 		ArtistName:     html.EscapeString(truncateByPixels(album.ArtistName, 168, 11)),
@@ -608,36 +593,59 @@ func handleAlbum(w http.ResponseWriter, r *http.Request) {
 		Tracks:         rows,
 		RemainingCount: remaining,
 		ShowBadge:      showBadge,
-		SVGHeight:      svgHeight,
+		SVGHeight:      albumSVGHeight(rows, remaining, showBadge),
 	}
-
-	if theme == "dark" {
-		data.BgColor = "#1c1c1e"
-		data.DividerColor = "#3a3a3c"
-		data.AlbumNameColor = "#ffffff"
-		data.ArtistColor = "#8e8e93"
-		data.MetaColor = "#636366"
-		data.TrackNumColor = "#636366"
-		data.TrackNameColor = "#ffffff"
-		data.AccentColor = "#d6003b"
-		data.HintColor = "#636366"
-	} else {
-		data.BgColor = "#f8f8fa"
-		data.DividerColor = "#d1d1d6"
-		data.AlbumNameColor = "#1c1c1e"
-		data.ArtistColor = "#6c6c70"
-		data.MetaColor = "#aeaeb2"
-		data.TrackNumColor = "#aeaeb2"
-		data.TrackNameColor = "#1c1c1e"
-		data.AccentColor = "#f0233b"
-		data.HintColor = "#aeaeb2"
-	}
+	setAlbumColors(&data, theme)
 
 	w.Header().Set("Content-Type", "image/svg+xml; charset=utf-8")
 	w.Header().Set("Cache-Control", "public, max-age=3600")
 
 	if err := albumTmpl.Execute(w, data); err != nil {
 		log.Printf("album template error: %v", err)
+	}
+}
+
+// albumSVGHeight computes the album-card canvas height: a fixed 280 when the
+// badge is shown, otherwise fitted to the track rows / remaining-count line.
+func albumSVGHeight(rows []TrackRow, remaining int, showBadge bool) int {
+	if showBadge {
+		return 280
+	}
+	h := 229 // min: artwork/meta area bottom
+	if len(rows) > 0 {
+		if last := rows[len(rows)-1].LineY + 16; last > h {
+			h = last
+		}
+	}
+	if remaining > 0 && 264 > h {
+		h = 264 // remaining count at y=248 + 16px padding
+	}
+	return h
+}
+
+// setAlbumColors applies the album-card palette for the given theme ("dark" or
+// "light"). Shared by the album card and the playlist Classic layout.
+func setAlbumColors(d *AlbumCardData, theme string) {
+	if theme == "dark" {
+		d.BgColor = "#1c1c1e"
+		d.DividerColor = "#3a3a3c"
+		d.AlbumNameColor = "#ffffff"
+		d.ArtistColor = "#8e8e93"
+		d.MetaColor = "#636366"
+		d.TrackNumColor = "#636366"
+		d.TrackNameColor = "#ffffff"
+		d.AccentColor = "#d6003b"
+		d.HintColor = "#636366"
+	} else {
+		d.BgColor = "#f8f8fa"
+		d.DividerColor = "#d1d1d6"
+		d.AlbumNameColor = "#1c1c1e"
+		d.ArtistColor = "#6c6c70"
+		d.MetaColor = "#aeaeb2"
+		d.TrackNumColor = "#aeaeb2"
+		d.TrackNameColor = "#1c1c1e"
+		d.AccentColor = "#f0233b"
+		d.HintColor = "#aeaeb2"
 	}
 }
 
@@ -1085,6 +1093,30 @@ func handlePlaylist(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	totalTracks := max(pl.TrackCount, len(pl.Tracks))
+
+	meta := pl.Updated
+	if totalTracks > 0 {
+		if meta != "" {
+			meta += " · "
+		}
+		meta += fmt.Sprintf("%d曲", totalTracks)
+	}
+
+	artworkB64, err := fetchArtwork(buildPlaylistCoverURL(pl.ArtworkURL))
+	if err != nil {
+		if pl.ArtworkURL != "" {
+			log.Printf("playlist artwork fetch failed (%s): %v", pl.ArtworkURL, err)
+		}
+		artworkB64 = ""
+	}
+
+	// Classic mode reuses the album-card layout (artwork left, single column).
+	if q.Get("ui") == "classic" {
+		renderPlaylistClassic(w, pl, meta, artworkB64, theme, totalTracks, showBadge)
+		return
+	}
+
 	// Description: user override (?desc=) wins, otherwise the scraped paragraph.
 	desc := pl.Description
 	if v, ok := q["desc"]; ok {
@@ -1113,28 +1145,11 @@ func handlePlaylist(w http.ResponseWriter, r *http.Request) {
 		})
 	}
 
-	totalTracks := max(pl.TrackCount, len(pl.Tracks))
 	remaining := max(totalTracks-len(rows), 0)
 
 	displayed := len(rows)
 	if displayed == 0 {
 		displayed = 1
-	}
-
-	meta := pl.Updated
-	if totalTracks > 0 {
-		if meta != "" {
-			meta += " · "
-		}
-		meta += fmt.Sprintf("%d曲", totalTracks)
-	}
-
-	artworkB64, err := fetchArtwork(buildPlaylistCoverURL(pl.ArtworkURL))
-	if err != nil {
-		if pl.ArtworkURL != "" {
-			log.Printf("playlist artwork fetch failed (%s): %v", pl.ArtworkURL, err)
-		}
-		artworkB64 = ""
 	}
 
 	data := PlaylistCardData{
@@ -1186,6 +1201,47 @@ func handlePlaylist(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Cache-Control", "public, max-age=3600")
 	if err := playlistTmpl.Execute(w, data); err != nil {
 		log.Printf("playlist template error: %v", err)
+	}
+}
+
+// renderPlaylistClassic renders a playlist through the album-card layout
+// (artwork left, single number+name+time column). Selected via ?ui=classic.
+func renderPlaylistClassic(w http.ResponseWriter, pl *PlaylistData, meta, artworkB64, theme string, totalTracks int, showBadge bool) {
+	const maxDisplay = 7
+	startY, lineSpacing := 46, 30
+	display := pl.Tracks
+	if len(display) > maxDisplay {
+		display = display[:maxDisplay]
+	}
+	var rows []TrackRow
+	for i, t := range display {
+		y := startY + i*lineSpacing
+		rows = append(rows, TrackRow{
+			Number:   i + 1,
+			Name:     html.EscapeString(truncateByPixels(t.Name, 300, 12)),
+			Duration: formatTrackDuration(t.Duration),
+			Y:        y,
+			LineY:    y + 6,
+		})
+	}
+	remaining := max(totalTracks-len(rows), 0)
+
+	data := AlbumCardData{
+		AlbumName:      html.EscapeString(truncateByPixels(pl.Name, 168, 13)),
+		ArtistName:     html.EscapeString(truncateByPixels(pl.Curator, 168, 11)),
+		Meta:           html.EscapeString(meta),
+		ArtworkBase64:  artworkB64,
+		Tracks:         rows,
+		RemainingCount: remaining,
+		ShowBadge:      showBadge,
+		SVGHeight:      albumSVGHeight(rows, remaining, showBadge),
+	}
+	setAlbumColors(&data, theme)
+
+	w.Header().Set("Content-Type", "image/svg+xml; charset=utf-8")
+	w.Header().Set("Cache-Control", "public, max-age=3600")
+	if err := albumTmpl.Execute(w, data); err != nil {
+		log.Printf("playlist classic template error: %v", err)
 	}
 }
 
@@ -1345,13 +1401,11 @@ func isStorefront(s string) bool {
 
 // buildAppleMusicURL reconstructs a canonical music.apple.com link from the
 // compact /api/open params (id + storefront, with optional kind and track id).
-// Apple Music accepts the slug-less /{kind}/{id} form and redirects to the
-// full URL, so callers can omit the human-readable name segment.
+// Apple Music accepts the slug-less /{kind}/_/{id} form and redirects to the
+// full URL, so callers can omit the human-readable name segment. Playlists use
+// kind=playlist with a pl.* id; everything else uses a numeric id.
 func buildAppleMusicURL(q url.Values) (string, bool) {
 	id := q.Get("id")
-	if !isDigits(id) {
-		return "", false
-	}
 	s := q.Get("s")
 	if s == "" {
 		s = q.Get("country")
@@ -1360,11 +1414,18 @@ func buildAppleMusicURL(q url.Values) (string, bool) {
 		return "", false
 	}
 	kind := q.Get("kind")
+	if kind == "" {
+		kind = "album"
+	}
 	switch kind {
 	case "album", "song", "music-video":
-		// allowed
-	case "":
-		kind = "album"
+		if !isDigits(id) {
+			return "", false
+		}
+	case "playlist":
+		if !isPlaylistID(id) {
+			return "", false
+		}
 	default:
 		return "", false
 	}
