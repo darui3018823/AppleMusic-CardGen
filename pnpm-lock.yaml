@@ -9,8 +9,8 @@ importers:
   .:
     dependencies:
       tailwindcss:
-        specifier: ^4.3.1
-        version: 4.3.1
+        specifier: ^4.3.2
+        version: 4.3.2
     devDependencies:
       '@tailwindcss/cli':
         specifier: ^4.3.2
