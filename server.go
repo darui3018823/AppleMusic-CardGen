@@ -61,7 +61,7 @@ const svgTmplSrc = `<?xml version="1.0" encoding="UTF-8"?>
   {{- end}}
   <text x="504" y="19" text-anchor="end" font-family="sans-serif" font-size="10" font-weight="500" fill="{{.AccentColor}}">Apple Music Card Generator</text>
   <text x="128" y="40" font-family="sans-serif" font-size="18" font-weight="600" fill="{{.TitleColor}}">{{.Title}}</text>
-  <text x="128" y="61" font-family="sans-serif" font-size="16" fill="{{.AccentColor}}">{{.Artist}}</text>
+  <text x="128" y="63" font-family="sans-serif" font-size="16" fill="{{.AccentColor}}">{{.Artist}}</text>
   <text x="128" y="83" font-family="sans-serif" font-size="14" fill="{{.SubColor}}">{{.Album}}</text>
   {{if .Meta}}<text x="128" y="106" font-family="sans-serif" font-size="12" fill="{{.SubColor}}">{{.Meta}}</text>{{end}}
   {{if .ShowBadge -}}
