@@ -8,6 +8,15 @@ import (
 	"testing"
 )
 
+func TestTrackTextTruncation(t *testing.T) {
+	longArtist := "Metal Scar Radio, Alec Justice, Keep Close & Chapters"
+	got := truncateByPixels(longArtist, cardTextMaxWidth, 16)
+
+	if got == longArtist || !strings.HasSuffix(got, "...") {
+		t.Fatalf("artist = %q, want a truncated value", got)
+	}
+}
+
 func TestNormalizeOpenQuery(t *testing.T) {
 	q := url.Values{
 		"id":    {"6782824353"},

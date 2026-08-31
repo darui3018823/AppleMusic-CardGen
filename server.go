@@ -41,6 +41,8 @@ type CardData struct {
 	ShowBadge     bool
 }
 
+const cardTextMaxWidth = 376
+
 // appleUserAgent is the browser-like UA used for all requests to Apple hosts
 // (page scraping and mzstatic artwork). A real UA avoids sporadic 403s.
 const appleUserAgent = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15"
@@ -51,6 +53,9 @@ const svgTmplSrc = `<?xml version="1.0" encoding="UTF-8"?>
     <clipPath id="clip">
       <rect x="10" y="10" width="110" height="110" rx="10"/>
     </clipPath>
+    <clipPath id="textClip">
+      <rect x="128" y="21" width="376" height="72"/>
+    </clipPath>
   </defs>
   <rect width="520" height="130" rx="14" fill="{{.BgColor}}"/>
   {{if .ArtworkBase64 -}}
@@ -60,9 +65,11 @@ const svgTmplSrc = `<?xml version="1.0" encoding="UTF-8"?>
   <text x="65" y="72" text-anchor="middle" font-family="sans-serif" font-size="28" fill="#636366">&#9835;</text>
   {{- end}}
   <text x="504" y="19" text-anchor="end" font-family="sans-serif" font-size="10" font-weight="500" fill="{{.AccentColor}}">Apple Music Card Generator</text>
-  <text x="128" y="40" font-family="sans-serif" font-size="18" font-weight="600" fill="{{.TitleColor}}">{{.Title}}</text>
-  <text x="128" y="63" font-family="sans-serif" font-size="16" fill="{{.AccentColor}}">{{.Artist}}</text>
-  <text x="128" y="83" font-family="sans-serif" font-size="14" fill="{{.SubColor}}">{{.Album}}</text>
+  <g clip-path="url(#textClip)">
+    <text x="128" y="40" font-family="sans-serif" font-size="18" font-weight="600" fill="{{.TitleColor}}">{{.Title}}</text>
+    <text x="128" y="63" font-family="sans-serif" font-size="16" fill="{{.AccentColor}}">{{.Artist}}</text>
+    <text x="128" y="83" font-family="sans-serif" font-size="14" fill="{{.SubColor}}">{{.Album}}</text>
+  </g>
   {{if .Meta}}<text x="128" y="106" font-family="sans-serif" font-size="12" fill="{{.SubColor}}">{{.Meta}}</text>{{end}}
   {{if .ShowBadge -}}
   <!-- Listen on Apple Music badge (140.62x41 → scale 0.6829 → ~96x28px, bottom-right at y=120) -->
@@ -1598,9 +1605,9 @@ func handleCard(w http.ResponseWriter, r *http.Request) {
 	}
 
 	data := CardData{
-		Title:         html.EscapeString(title),
-		Artist:        html.EscapeString(artist),
-		Album:         html.EscapeString(album),
+		Title:         html.EscapeString(truncateByPixels(title, cardTextMaxWidth, 18)),
+		Artist:        html.EscapeString(truncateByPixels(artist, cardTextMaxWidth, 16)),
+		Album:         html.EscapeString(truncateByPixels(album, cardTextMaxWidth, 14)),
 		ArtworkBase64: artworkB64,
 		Meta:          meta,
 		ShowBadge:     q.Get("badge") != "0",
