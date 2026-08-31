@@ -1496,10 +1496,33 @@ func buildAppleMusicURL(q url.Values) (string, bool) {
 	return webURL, true
 }
 
+// normalizeOpenQuery accepts compact links copied out of an HTML snippet.
+// In an href attribute, "&amp;" is the correct spelling of "&", but a user
+// may copy the escaped URL itself and send the literal entity to this API.
+func normalizeOpenQuery(q url.Values) url.Values {
+	normalized := make(url.Values, len(q))
+	for key, values := range q {
+		key = strings.TrimPrefix(key, "amp;")
+		if _, exists := normalized[key]; !exists {
+			normalized[key] = append([]string(nil), values...)
+		}
+	}
+	return normalized
+}
+
+func parseOpenQuery(rawQuery string) url.Values {
+	// ParseQuery rejects literal semicolons in parameter names, so decode the
+	// HTML separator before handing the raw query to net/url.
+	rawQuery = strings.ReplaceAll(rawQuery, "&amp;", "&")
+	q, _ := url.ParseQuery(rawQuery)
+	return normalizeOpenQuery(q)
+}
+
 func handleOpen(w http.ResponseWriter, r *http.Request) {
-	q := r.URL.Query()
+	q := parseOpenQuery(r.URL.RawQuery)
 	var webURL string
 	if raw := q.Get("url"); raw != "" {
+		raw = html.UnescapeString(raw)
 		u, err := url.Parse(raw)
 		if err != nil || u.Scheme != "https" || u.Hostname() != "music.apple.com" {
 			http.Error(w, "invalid url: must be an https music.apple.com link", http.StatusBadRequest)
