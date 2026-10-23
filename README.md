@@ -139,7 +139,7 @@ Visit `https://amcg.daruks.com` to generate cards interactively.
 
 ### Requirements
 
-- Go 1.25+
+- Go 1.27.3+
 - Node.js / pnpm (for Tailwind CSS build)
 
 ### Setup

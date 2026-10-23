@@ -13,7 +13,7 @@ Thank you for your interest in contributing to Apple Music Card Generator!
 
 ### Requirements
 
-- Go 1.25+
+- Go 1.27.3+
 - Node.js 22+ / pnpm
 
 ### Local setup
