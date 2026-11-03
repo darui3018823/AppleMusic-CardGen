@@ -1,0 +1,11 @@
+.git
+.github
+.idea
+.claude
+node_modules
+ScreenShots
+docs
+examples
+japanese
+*.exe
+applemusiccg
