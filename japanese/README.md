@@ -140,7 +140,7 @@ GET /api/playlist
 
 ### 必要環境
 
-- Go 1.27.3+
+- Go 1.27.4+
 - Node.js / pnpm（Tailwind CSS ビルド用）
 
 ### セットアップ

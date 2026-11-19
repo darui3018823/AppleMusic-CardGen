@@ -13,7 +13,7 @@ Apple Music Card Generator へのコントリビューションに興味を持�
 
 ### 必要環境
 
-- Go 1.27.3+
+- Go 1.27.4+
 - Node.js 22+ / pnpm
 
 ### セットアップ手順
